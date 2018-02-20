@@ -72,134 +72,99 @@ public class ReplicaServer {
 
 
 
-				//--------------------------reading and distribute process------------------
 
-				//-------------------------------------------------CONNECTION ----------------------------------------------------------------
-
-				if(!checkIfConnected(clientMessageArray[0])) { //if not in list
+				//-------------------------------------------------COMMANDS? ----------------------------------------------------------------
+				//reading commands and acting on it
 
 
-					if(clientMessageArray[1].equals("/connect")) {//wants to connect, but is not connected yet
 
-						//---------------------------connection process--------------------------------------
-						if(addClient(clientMessageArray[0],clientAdress,clientPort)) {
+				//HANDSHAKE! --------------------------------------------------------------------------
+				if(clientMessageArray[1].equals("/connect")) {
 
-							serverMessage="connecting";
+					//---------------------------connection process--------------------------------------
+					if(addClient(clientMessageArray[0],clientAdress,clientPort)) {
 
-
-							sendPrivateMessage(serverMessage, clientMessageArray[0]);
-							broadcast(clientMessageArray[0]+" joined the chatroom ");
-						}
-						else {
-
-
-						}
-					}
-					else {//is not connected but wants to do something on server
-						serverMessage="Sorry, please connect to server first";
-						//	sendPrivateMessage(serverMessage, clientMessageArray[0]);
-						byte[] x= (serverMessage).getBytes();
-						DatagramPacket dpSend= new DatagramPacket(x, x.length, clientAdress, clientPort);
-						try {
-							m_socket.send(dpSend);																	// kan inte skicka med sendPrivate... för att den inte finns med i listan
-																	
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							System.err.println("Something worong with sending first message.");
-						}
-
+						serverMessage="connecting";
+						sendPrivateMessage(serverMessage, clientMessageArray[0]);
+						broadcast(clientMessageArray[0]+" joined the chatroom ");
 					}
 				}
-				//incase of username already used 
-				else if(checkIfConnected(clientMessageArray[0]) && addClient(clientMessageArray[0],clientAdress,clientPort) ){// this client is not connected but user name taken 
-					serverMessage="cant connect, please restart with other username";
+			}
+			
+
+			else {//connection established, ready for use
+				if(clientMessageArray[1].equals("/connect")) {//for clients trying to use already taken user name				?????
+
+					serverMessage="cant connect, name already in use, by you ";
 					byte[] x= (serverMessage).getBytes();
 					DatagramPacket dpSend= new DatagramPacket(x, x.length, clientAdress, clientPort);
 					try {
 						m_socket.send(dpSend);																// kan inte skicka med sendPrivate... för att den inte finns med i listan
-																
+						//testing
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						System.err.println("Something worong with sending first message.");
 					}
-
-
 				}
-				else {//connection established, ready for use
-					if(clientMessageArray[1].equals("/connect")) {//for clients trying to use already taken user name				?????
 
-						serverMessage="cant connect, name already in use, by you ";
-						byte[] x= (serverMessage).getBytes();
-						DatagramPacket dpSend= new DatagramPacket(x, x.length, clientAdress, clientPort);
-						try {
-							m_socket.send(dpSend);																// kan inte skicka med sendPrivate... för att den inte finns med i listan
-																	//testing
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							System.err.println("Something worong with sending first message.");
-						}
-					}
-
-					//-------------------------------------------PRIVATE MESSAGE---------------------------------------------------			
-					else if (clientMessageArray[1].equals("/tell")) {
-						if(!checkIfConnected(clientMessageArray[2])){//if receivername is not registered in server
-							privateMessage="username not found, try /list commando";
-							sendPrivateMessage(privateMessage, clientMessageArray[0]);
+				//-------------------------------------------PRIVATE MESSAGE---------------------------------------------------			
+				else if (clientMessageArray[1].equals("/tell")) {
+					if(!checkIfConnected(clientMessageArray[2])){//if receivername is not registered in server
+						privateMessage="username not found, try /list commando";
+						sendPrivateMessage(privateMessage, clientMessageArray[0]);
 
 
-						}
-						else {
-
-							privateMessage="";
-							//putting togheter message from array elements.
-							for(int i=3; i<clientMessageArray.length;i++) {
-								privateMessage=privateMessage+" "+ clientMessageArray[i];
-							}
-							serverMessage= clientMessageArray[0]+ ": "+ privateMessage;//name of sender + message ->for receiver
-							sendPrivateMessage(serverMessage, clientMessageArray[2]); //to receiver
-							serverMessage= clientMessageArray[2]+ ": "+ privateMessage;//name of receiver + message -> for sender
-							sendPrivateMessage(serverMessage, clientMessageArray[0]); //to sender
-						}
-					}
-					//------------------------------------------PRINT LIST-----------------------------------------------------------			
-					else if (clientMessageArray[1].equals("/list")) {
-
-						updateUserList();
-						sendPrivateMessage(ClientList, clientMessageArray[0]);
-
-					}
-					//-----------------------------------------leaving server---------------------------------			
-					else if (clientMessageArray[1].equals("/leave")) {
-
-						removeUser(clientMessageArray[0]);
-					}
-					else if (clientMessageArray[1].equals("/answer")) {
-						
-
-						ClientConnection c;
-						for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
-
-							c = itr.next();
-							if(c.hasName(clientMessageArray[0])) {
-								c.setActiveStatus(true);
-							}
-						}
 					}
 					else {
-						String broadMessage="";
-						for(int i=1; i<clientMessageArray.length;i++) {
-							broadMessage=broadMessage+" "+ clientMessageArray[i];
+
+						privateMessage="";
+						//putting togheter message from array elements.
+						for(int i=3; i<clientMessageArray.length;i++) {
+							privateMessage=privateMessage+" "+ clientMessageArray[i];
 						}
-						//	serverMessage= clientMessageArray[0]+ ": "+ broadMessage;//name of sender + message ->for receiver
-						broadcast(clientMessageArray[0]+": "+ broadMessage);
+						serverMessage= clientMessageArray[0]+ ": "+ privateMessage;//name of sender + message ->for receiver
+						sendPrivateMessage(serverMessage, clientMessageArray[2]); //to receiver
+						serverMessage= clientMessageArray[2]+ ": "+ privateMessage;//name of receiver + message -> for sender
+						sendPrivateMessage(serverMessage, clientMessageArray[0]); //to sender
 					}
-					//--------------------------------------------------------------------------------------
+				}
+				//------------------------------------------PRINT LIST-----------------------------------------------------------			
+				else if (clientMessageArray[1].equals("/list")) {
+
+					updateUserList();
+					sendPrivateMessage(ClientList, clientMessageArray[0]);
 
 				}
-			}
-			else {//if user has send message with only his/her name. Server will crash if not protected from this
+				//-----------------------------------------leaving server---------------------------------			
+				else if (clientMessageArray[1].equals("/leave")) {
+
+					removeUser(clientMessageArray[0]);
+				}
+				else if (clientMessageArray[1].equals("/answer")) {
+
+
+					ClientConnection c;
+					for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
+
+						c = itr.next();
+						if(c.hasName(clientMessageArray[0])) {
+							c.setActiveStatus(true);
+						}
+					}
+				}
+				else {
+					String broadMessage="";
+					for(int i=1; i<clientMessageArray.length;i++) {
+						broadMessage=broadMessage+" "+ clientMessageArray[i];
+					}
+					//	serverMessage= clientMessageArray[0]+ ": "+ broadMessage;//name of sender + message ->for receiver
+					broadcast(clientMessageArray[0]+": "+ broadMessage);
+				}
+				//--------------------------------------------------------------------------------------
 
 			}
+
+
 			kickInactiveClients();//checks after 20 seconds if anyone crashed
 		} while (true);
 	}
@@ -212,7 +177,7 @@ public class ReplicaServer {
 
 			c = itr.next();
 			if(c.hasName(name)) {
-				
+
 				return false; // Already exists a client with this name
 
 
@@ -283,7 +248,7 @@ public class ReplicaServer {
 		return false;// client not connected
 	}
 	private void kickInactiveClients() {
-	
+
 		if(startTime+20000<System.currentTimeMillis()) {
 
 			if(m_connectedClients.size()==0) {//check if there is a client on server at all, even if not needed in this version
@@ -305,7 +270,7 @@ public class ReplicaServer {
 					}
 				}
 
-			
+
 				String checkingClientsMessage="veryComplicatedWordSoNoUserWritesThisInChatAndActivatesTheProtocol";
 				broadcast(checkingClientsMessage);
 				startTime=System.currentTimeMillis();
