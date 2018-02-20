@@ -32,7 +32,7 @@ public class ClientConnection {
 				System.err.println("Something wrong with sending first message.");
 			}
 
-
+			//TODO chilla som faen xD
 	}
 
 	public boolean hasName(String testName) {
