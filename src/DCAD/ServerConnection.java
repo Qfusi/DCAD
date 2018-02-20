@@ -53,7 +53,7 @@ public class ServerConnection {
 	}
 	
 	public void sendMessage(Message message) {
-		
+		a
 	}
 	
 }
