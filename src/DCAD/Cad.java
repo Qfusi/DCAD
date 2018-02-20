@@ -22,7 +22,6 @@ public class Cad {
 	
 	private void connectToServer(String hostName, int port) {
 		m_port = port;
-		int i=0;
 		m_connection = new ServerConnection(hostName, port);
 		m_connection.handshake();
 	}
