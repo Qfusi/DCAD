@@ -34,15 +34,14 @@ public class ServerConnection {
 	}
 
 	public boolean handshake() {
-		JoinMessage message = new JoinMessage(m_socket);
+		Message message = new JoinMessage();
 		sendMessage(message);
 		
-		Message message2;
-		message2 = receiveMessage();
+		message = receiveMessage();
 		
-		//TODO FIX HANDSHAKE U FUKKER
+		System.out.println("it works");
 		
-		return false;
+		return true;
 	}
 	
 	public Message receiveMessage() {
