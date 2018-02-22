@@ -9,19 +9,21 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.Scanner;
 
+import DCAD.GObject;
 import Message.MessageConvertion;
 import Message.Message;
+import Message.DrawMessage;
 import Message.JoinMessage;
 
 public class FrontEnd {
 	private static Scanner m_s;
 	private DatagramSocket m_socket;
-	
+
 	public static void main(String[] args) {
 		FrontEnd instance = new FrontEnd(readFile());
 		instance.listenForMessages();
 	}
-	
+
 	private FrontEnd(int portNumber) {
 		try {
 			m_socket = new DatagramSocket(portNumber);
@@ -29,20 +31,21 @@ public class FrontEnd {
 			e.printStackTrace();
 		}
 	}
-	
+
 	private void listenForMessages() {
-		System.out.println("Waiting for clients...");
+		System.out.println("Listening for messages...");
 		while (true) {
-			byte[] buf = new byte[256];
+			// THE SIZE OF THIS BYTE ARRAY IS MUCHO IMPORTANTE
+			byte[] buf = new byte[1500];
 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
 			Message message = null;
-			
+
 			try {
 				m_socket.receive(packet);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
+
 			try {
 				message = (Message) MessageConvertion.deserialize(packet.getData());
 			} catch (ClassNotFoundException e) {
@@ -50,14 +53,17 @@ public class FrontEnd {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
+
 			if (message instanceof JoinMessage) {
+				System.out.println("received join message of: " + packet.getLength() + " bytes");
 				sendMessage(packet.getAddress(), packet.getPort(), message);
-				System.out.println("received join message");
+			} else if (message instanceof DrawMessage) {
+				System.out.println("received draw message of: " + packet.getLength() + " bytes");
+				sendMessage(packet.getAddress(), packet.getPort(), message);
 			}
 		}
 	}
-	
+
 	public void sendMessage(InetAddress address, int port, Message message) {
 		byte[] b = null;
 		try {
@@ -71,23 +77,23 @@ public class FrontEnd {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
+		System.out.println("sent");
 	}
-	
+
 	private static int readFile() {
 		try {
 			m_s = new Scanner(new FileReader("resources/frontEndFile"));
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		
+
 		int s = 0;
-		
+
 		while (m_s.hasNext()) {
 			s = m_s.nextInt();
 		}
-		
-		System.out.println("portnumber: " + s);
-		
+
 		return s;
 	}
 }

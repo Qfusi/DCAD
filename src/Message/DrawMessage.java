@@ -2,7 +2,7 @@ package Message;
 import DCAD.GObject;
 
 public class DrawMessage extends Message{
-	GObject m_obj;
+	private GObject m_obj;
 	public DrawMessage(GObject obj) {
 		m_obj = obj;
 	}

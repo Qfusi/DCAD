@@ -15,7 +15,7 @@ import java.io.Serializable;
  */
 public class GObject implements Serializable{
 	private Shape s;
-	private transient Color c;
+	private Color c;
 	private int x, y, width, height;
 	// Note that the x and y coordinates are relative to the top left corner of
 	// the

@@ -196,4 +196,9 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 						// components.
 		update(g);
 	}
+
+	public void addObject(GObject obj) {
+		objectList.addLast(obj);
+		repaint();
+	}
 }

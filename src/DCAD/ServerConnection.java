@@ -1,5 +1,6 @@
 package DCAD;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -18,7 +19,7 @@ public class ServerConnection {
 	private DatagramSocket m_socket;
 	private InetAddress m_serverAddress;
 	private int m_port;
-	
+
 	public ServerConnection(String hostName, int port) {
 		m_port = port;
 		try {
@@ -36,25 +37,26 @@ public class ServerConnection {
 	public boolean handshake() {
 		Message message = new JoinMessage();
 		sendMessage(message);
-		
+
+		message = new DrawMessage(new GObject(Shape.FILLED_RECTANGLE, Color.BLUE, 500, 500, 40, 40));
+		sendMessage(message);
+
 		message = receiveMessage();
-		
-		System.out.println("it works");
-		
+
 		return true;
 	}
-	
+
 	public Message receiveMessage() {
 		Message message = null;
-		byte[] b = new byte[256];
+		byte[] b = new byte[1500];
 		DatagramPacket packet = new DatagramPacket(b, b.length);
-		
+
 		try {
 			m_socket.receive(packet);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 		try {
 			message = (Message) MessageConvertion.deserialize(packet.getData());
 		} catch (ClassNotFoundException e) {
@@ -62,7 +64,7 @@ public class ServerConnection {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 		if (message instanceof JoinMessage)
 			System.out.println("received join message");
 		else if (message instanceof DrawMessage)
@@ -71,10 +73,10 @@ public class ServerConnection {
 			System.out.println("received remove message");
 		else if (message instanceof LeaveMessage)
 			System.out.println("received leave message");
-		
+
 		return message;
 	}
-	
+
 	public void sendMessage(Message message) {
 		byte[] b = null;
 		try {
@@ -88,6 +90,8 @@ public class ServerConnection {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
+		System.out.println("sent");
 	}
-	
+
 }
