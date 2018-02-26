@@ -41,8 +41,9 @@ public class ServerConnection {
 
 		if (message instanceof JoinMessage) {
 			JoinMessage msg = (JoinMessage) message;
-			if (msg.getMayJoin())
+			if (msg.getMayJoin()) {
 				return true;
+			}
 		}
 		return false;
 	}
@@ -100,5 +101,4 @@ public class ServerConnection {
 		else if (message instanceof LeaveMessage)
 			System.out.println("sent leave message");
 	}
-
 }

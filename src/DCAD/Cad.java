@@ -6,6 +6,8 @@
 package DCAD;
 
 import Message.DrawMessage;
+import Message.JoinMessage;
+import Message.LeaveMessage;
 import Message.Message;
 import Message.RemoveMessage;
 
@@ -28,24 +30,32 @@ public class Cad {
 		m_port = port;
 		m_connection = new ServerConnection(hostName, port);
 		gui.passSC(m_connection);
-		if (m_connection.handshake())
-			listenForMessages();
-		else
-			System.err.println("Unable to connect to server");
+		
+		//with handshaking
+		//if (m_connection.handshake())
+		//	listenForMessages();
+		//else
+		//	System.err.println("Unable to connect to server");
+		
+		//without handshaking
+		m_connection.sendMessage(new JoinMessage());
+		listenForMessages();
 	}
 
 	private void listenForMessages() {
 		while (true) {
 			Message message = m_connection.receiveMessage();
 
-			if (message instanceof DrawMessage) {
+			if (message instanceof JoinMessage) {
+				gui.reDrawEverything(((JoinMessage) message).getList());
+			} else if (message instanceof DrawMessage) {
 				GObject obj = (GObject) message.getObj();
 				drawObject(obj);
 			} else if (message instanceof RemoveMessage) {
 				removeObject();
+			} else if (message instanceof LeaveMessage) {
+				//Do things
 			}
-			
-			// TODO do things
 		}
 	}
 

@@ -10,6 +10,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import DCAD.GObject;
 import Message.MessageConvertion;
 import Message.RemoveMessage;
 import Message.Message;
@@ -20,9 +21,11 @@ import Message.LeaveMessage;
 public class FrontEnd {
 	private DatagramSocket m_socket;
 	
-	//move to server
+	//move to server later----
 	private ArrayList<Server.ClientConnection> m_connectedClients = new ArrayList<Server.ClientConnection>();
-
+	private ArrayList<GObject> m_GObjects  = new ArrayList<GObject>();
+	//------------------------
+	
 	public static void main(String[] args) {
 		FrontEnd instance = new FrontEnd(readFile());
 		instance.listenForMessages();
@@ -60,24 +63,31 @@ public class FrontEnd {
 			
 			if (message instanceof JoinMessage) {
 				System.out.println("received join message of: " + packet.getLength() + " bytes");
-				((JoinMessage) message).setMayJoin(true);
 				
-				//Move to server
+				//Move to server later-----
+				((JoinMessage) message).setMayJoin(true);
 				m_connectedClients.add(new Server.ClientConnection("temp", packet.getAddress(), packet.getPort()));
+				((JoinMessage) message).setList(m_GObjects);
+				//------------------------
 				
 				sendMessage(packet.getAddress(), packet.getPort(), message);
 			} else if (message instanceof DrawMessage) {
 				System.out.println("received draw message of: " + packet.getLength() + " bytes");
 				
-				//Move to server
+				//Move to server ------
+				m_GObjects.add((GObject) message.getObj());
 				for (Server.ClientConnection cc : m_connectedClients) {
 					sendMessage(cc.getAddress(), cc.getPort(), message);
 				}
+				//----------------------
 			} else if (message instanceof RemoveMessage) {
 				System.out.println("received remove message of: " + packet.getLength() + " bytes");
+				//Move to server ------
+				m_GObjects.remove(m_GObjects.size() - 1);
 				for (Server.ClientConnection cc : m_connectedClients) {
 					sendMessage(cc.getAddress(), cc.getPort(), message);
 				}
+				//---------------------
 			}
 		}
 	}
@@ -109,7 +119,7 @@ public class FrontEnd {
 	private static int readFile() {
 		Scanner m_s = null;
 		try {
-			m_s = new Scanner(new FileReader("resources/frontEndFile"));
+			m_s = new Scanner(new FileReader("resources/FrontEndFile"));
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}

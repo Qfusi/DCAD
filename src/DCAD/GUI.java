@@ -16,6 +16,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import javax.swing.JButton;
@@ -214,6 +215,13 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 	
 	public void removeObject() {
 		objectList.removeLast();
+		repaint();
+	}
+	
+	
+	public void reDrawEverything(ArrayList<GObject> list) {
+		for (GObject obj : list)
+			objectList.addLast(obj);
 		repaint();
 	}
 }
