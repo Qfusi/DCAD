@@ -42,11 +42,16 @@ public class ClientConnection {
 	public String getName() {
 		return m_name;
 	}
+	public InetAddress getAddress() {
+		return m_address;
+	}
+	public int getPort() {
+		return m_port;
+	}
 	public void setActiveStatus(boolean newStatus) {
 		activeStatus=newStatus;
 	}
 	public boolean getActiveStatus() {
 		return activeStatus;
 	}
-
 }

@@ -7,9 +7,9 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Scanner;
 
-import DCAD.GObject;
 import Message.MessageConvertion;
 import Message.RemoveMessage;
 import Message.Message;
@@ -19,6 +19,9 @@ import Message.LeaveMessage;
 
 public class FrontEnd {
 	private DatagramSocket m_socket;
+	
+	//move to server
+	private ArrayList<Server.ClientConnection> m_connectedClients = new ArrayList<Server.ClientConnection>();
 
 	public static void main(String[] args) {
 		FrontEnd instance = new FrontEnd(readFile());
@@ -58,13 +61,23 @@ public class FrontEnd {
 			if (message instanceof JoinMessage) {
 				System.out.println("received join message of: " + packet.getLength() + " bytes");
 				((JoinMessage) message).setMayJoin(true);
+				
+				//Move to server
+				m_connectedClients.add(new Server.ClientConnection("temp", packet.getAddress(), packet.getPort()));
+				
 				sendMessage(packet.getAddress(), packet.getPort(), message);
 			} else if (message instanceof DrawMessage) {
 				System.out.println("received draw message of: " + packet.getLength() + " bytes");
-				sendMessage(packet.getAddress(), packet.getPort(), message);
+				
+				//Move to server
+				for (Server.ClientConnection cc : m_connectedClients) {
+					sendMessage(cc.getAddress(), cc.getPort(), message);
+				}
 			} else if (message instanceof RemoveMessage) {
 				System.out.println("received remove message of: " + packet.getLength() + " bytes");
-				sendMessage(packet.getAddress(), packet.getPort(), message);
+				for (Server.ClientConnection cc : m_connectedClients) {
+					sendMessage(cc.getAddress(), cc.getPort(), message);
+				}
 			}
 		}
 	}
