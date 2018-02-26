@@ -5,7 +5,9 @@
 
 package DCAD;
 
+import Message.DrawMessage;
 import Message.Message;
+import Message.RemoveMessage;
 
 public class Cad {
 	static private GUI gui = new GUI(750, 600);
@@ -19,12 +21,13 @@ public class Cad {
 	}
 
 	private Cad() {
-
+		
 	}
 
 	private void connectToServer(String hostName, int port) {
 		m_port = port;
 		m_connection = new ServerConnection(hostName, port);
+		gui.passSC(m_connection);
 		if (m_connection.handshake())
 			listenForMessages();
 		else
@@ -35,15 +38,23 @@ public class Cad {
 		while (true) {
 			Message message = m_connection.receiveMessage();
 
-			GObject obj = (GObject) message.getObj();
-
-			drawObject(obj);
-
+			if (message instanceof DrawMessage) {
+				GObject obj = (GObject) message.getObj();
+				drawObject(obj);
+			} else if (message instanceof RemoveMessage) {
+				removeObject();
+			}
+			
 			// TODO do things
 		}
 	}
 
-	public void drawObject(GObject obj) {
+	private void drawObject(GObject obj) {
 		gui.addObject(obj);
 	}
+	
+	private void removeObject() {
+		gui.removeObject();
+	}
+	
 }

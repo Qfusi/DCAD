@@ -11,12 +11,13 @@ import java.util.Scanner;
 
 import DCAD.GObject;
 import Message.MessageConvertion;
+import Message.RemoveMessage;
 import Message.Message;
 import Message.DrawMessage;
 import Message.JoinMessage;
+import Message.LeaveMessage;
 
 public class FrontEnd {
-	private static Scanner m_s;
 	private DatagramSocket m_socket;
 
 	public static void main(String[] args) {
@@ -53,12 +54,16 @@ public class FrontEnd {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-
+			
 			if (message instanceof JoinMessage) {
 				System.out.println("received join message of: " + packet.getLength() + " bytes");
+				((JoinMessage) message).setMayJoin(true);
 				sendMessage(packet.getAddress(), packet.getPort(), message);
 			} else if (message instanceof DrawMessage) {
 				System.out.println("received draw message of: " + packet.getLength() + " bytes");
+				sendMessage(packet.getAddress(), packet.getPort(), message);
+			} else if (message instanceof RemoveMessage) {
+				System.out.println("received remove message of: " + packet.getLength() + " bytes");
 				sendMessage(packet.getAddress(), packet.getPort(), message);
 			}
 		}
@@ -78,10 +83,18 @@ public class FrontEnd {
 			e.printStackTrace();
 		}
 
-		System.out.println("sent");
+		if (message instanceof JoinMessage)
+			System.out.println("sent join message");
+		else if (message instanceof DrawMessage)
+			System.out.println("sent draw message");
+		else if (message instanceof RemoveMessage)
+			System.out.println("sent remove message");
+		else if (message instanceof LeaveMessage)
+			System.out.println("sent leave message");
 	}
 
 	private static int readFile() {
+		Scanner m_s = null;
 		try {
 			m_s = new Scanner(new FileReader("resources/frontEndFile"));
 		} catch (FileNotFoundException e) {

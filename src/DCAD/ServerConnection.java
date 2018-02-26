@@ -1,6 +1,5 @@
 package DCAD;
 
-import java.awt.Color;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -38,12 +37,14 @@ public class ServerConnection {
 		Message message = new JoinMessage();
 		sendMessage(message);
 
-		message = new DrawMessage(new GObject(Shape.FILLED_RECTANGLE, Color.BLUE, 500, 500, 40, 40));
-		sendMessage(message);
-
 		message = receiveMessage();
 
-		return true;
+		if (message instanceof JoinMessage) {
+			JoinMessage msg = (JoinMessage) message;
+			if (msg.getMayJoin())
+				return true;
+		}
+		return false;
 	}
 
 	public Message receiveMessage() {
@@ -90,8 +91,14 @@ public class ServerConnection {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-		System.out.println("sent");
+		if (message instanceof JoinMessage)
+			System.out.println("sent join message");
+		else if (message instanceof DrawMessage)
+			System.out.println("sent draw message");
+		else if (message instanceof RemoveMessage)
+			System.out.println("sent remove message");
+		else if (message instanceof LeaveMessage)
+			System.out.println("sent leave message");
 	}
 
 }

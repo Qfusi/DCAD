@@ -21,6 +21,9 @@ import java.util.ListIterator;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 
+import Message.DrawMessage;
+import Message.RemoveMessage;
+
 public class GUI extends JFrame implements WindowListener, ActionListener, MouseListener, MouseMotionListener {
 
 	JButton ovalButton = new JButton("Oval");
@@ -36,6 +39,7 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 
 	private GObject template = new GObject(Shape.OVAL, Color.RED, 363, 65, 25, 25);
 	private GObject current = null;
+	private ServerConnection m_SC;
 
 	private LinkedList<GObject> objectList = new LinkedList<GObject>();
 
@@ -126,14 +130,16 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 		// User clicks the right mouse button:
 		// undo an operation by removing the most recently added object.
 		if (e.getButton() == MouseEvent.BUTTON3 && objectList.size() > 0) {
-			objectList.removeLast();
+			//objectList.removeLast();
+			m_SC.sendMessage(new RemoveMessage());
 		}
 		repaint();
 	}
 
 	public void mouseReleased(MouseEvent e) {
 		if (current != null) {
-			objectList.addLast(current);
+			//objectList.addLast(current);
+			m_SC.sendMessage(new DrawMessage(current));
 			current = null;
 		}
 		repaint();
@@ -197,8 +203,17 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 		update(g);
 	}
 
+	public void passSC(ServerConnection connection) {
+		m_SC = connection;
+	}
+	
 	public void addObject(GObject obj) {
 		objectList.addLast(obj);
+		repaint();
+	}
+	
+	public void removeObject() {
+		objectList.removeLast();
 		repaint();
 	}
 }
