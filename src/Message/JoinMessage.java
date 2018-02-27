@@ -5,7 +5,8 @@ import DCAD.GObject;
 
 public class JoinMessage extends Message{
 	private ArrayList<GObject> m_GObjects  = new ArrayList<GObject>();
-	boolean mayJoin = false;
+	private boolean mayJoin = false;
+	private boolean isReply = false;
 	public JoinMessage() {
 	}
 
@@ -17,12 +18,20 @@ public class JoinMessage extends Message{
 		mayJoin = bool;
 	}
 	
-	public ArrayList getList() {
+	public ArrayList<GObject> getList() {
 		return m_GObjects;
 	}
 	
-	public void setList(ArrayList list) {
+	public void setList(ArrayList<GObject> list) {
 		m_GObjects = list;
+	}
+	
+	public boolean isReply() {
+		return isReply;
+	}
+
+	public void setReply(boolean isReply) {
+		this.isReply = isReply;
 	}
 	
 	@Override

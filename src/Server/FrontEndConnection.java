@@ -1,11 +1,10 @@
-package DCAD;
+
+package Server;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 
 import Message.DrawMessage;
 import Message.JoinMessage;
@@ -14,39 +13,35 @@ import Message.Message;
 import Message.MessageConvertion;
 import Message.RemoveMessage;
 
-public class ServerConnection {
+public class FrontEndConnection {
+	private final InetAddress m_address;
+	private final int m_port;
 	private DatagramSocket m_socket;
-	private InetAddress m_serverAddress;
-	private int m_port;
 
-	public ServerConnection(String hostName, int port) {
+	public FrontEndConnection(InetAddress address, int port) {
+		m_address = address;
 		m_port = port;
-		try {
-			m_socket = new DatagramSocket();
-		} catch (SocketException e) {
-			e.printStackTrace();
-		}
-		try {
-			m_serverAddress = InetAddress.getByName(hostName);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
+	}
+	
+	public FrontEndConnection(InetAddress address, int port, DatagramSocket socket) {
+		m_address = address;
+		m_port = port;
+		m_socket = socket;
 	}
 
-	public boolean handshake() {
+	public boolean handShake() {
 		Message message = new JoinMessage();
 		sendMessage(message);
-
+		
 		message = receiveMessage();
-
+		
 		if (message instanceof JoinMessage) {
-			if (((JoinMessage) message).getMayJoin()) {
+			if (((JoinMessage) message).getMayJoin())
 				return true;
-			}
 		}
 		return false;
 	}
-
+	
 	public Message receiveMessage() {
 		Message message = null;
 		byte[] b = new byte[1500];
@@ -77,7 +72,7 @@ public class ServerConnection {
 
 		return message;
 	}
-
+	
 	public void sendMessage(Message message) {
 		byte[] b = null;
 		try {
@@ -85,7 +80,7 @@ public class ServerConnection {
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-		DatagramPacket packet = new DatagramPacket(b, b.length, m_serverAddress, m_port);
+		DatagramPacket packet = new DatagramPacket(b, b.length, m_address, m_port);
 		try {
 			m_socket.send(packet);
 		} catch (IOException e) {
@@ -99,5 +94,11 @@ public class ServerConnection {
 			System.out.println("sent remove message");
 		else if (message instanceof LeaveMessage)
 			System.out.println("sent leave message");
+	}
+	public InetAddress getAddress() {
+		return m_address;
+	}
+	public int getPort() {
+		return m_port;
 	}
 }
