@@ -1,9 +1,15 @@
 package Server;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Scanner;
+
+import Message.JoinMessage;
+import Message.MessageConvertion;
 
 public class ReplicaServer {
 
@@ -25,9 +31,8 @@ public class ReplicaServer {
 			System.exit(-1);
 		}
 		try {
-			ReplicaServer instance = new ReplicaServer(Integer.parseInt(args[0]));
-
-
+			ReplicaServer instance = new ReplicaServer(readFile(Integer.parseInt(args[0])));
+			
 			instance.listenForClientMessages();
 		} catch(NumberFormatException e) {
 			System.err.println("Error: port number must be an integer.");
@@ -52,6 +57,45 @@ public class ReplicaServer {
 		System.out.println("Waiting for client messages... ");
 		startTime=System.currentTimeMillis();
 
+		
+		//---------------------------TRYING TO DO THIS HERE------------------------------
+		//				~Jonathan
+		
+		Scanner m_s = null;
+		ArrayList<String> list = new ArrayList<String>();
+		try {
+			m_s = new Scanner(new FileReader("resources/FrontEndConfig"));
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		while (m_s.hasNextLine()) {
+			list.add(m_s.nextLine());
+		}
+		
+		try {
+			clientAdress = InetAddress.getByName(list.get(0).split(" ")[0]);
+			clientPort = Integer.parseInt(list.get(0).split(" ")[1]);
+		} catch (UnknownHostException e3) {
+			e3.printStackTrace();
+		}
+		m_s.close();
+		
+		byte[] b = null;
+		
+		try {
+			b = MessageConvertion.serialize(new JoinMessage());
+		} catch (IOException e2) {
+			e2.printStackTrace();
+		}
+		DatagramPacket packet = new DatagramPacket(b, b.length, clientAdress, clientPort);
+		try {
+			m_socket.send(packet);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		
+		//----------------------------------------------------------------------------
 		do {
 
 			byte[] buf= new byte[1024];
@@ -282,12 +326,27 @@ public class ReplicaServer {
 					c2.setActiveStatus(false);
 				}
 			}
-
-
-
-
 		}
 	}
-
+	
+	private static int readFile(int id) {
+		Scanner m_s = null;
+		ArrayList<String> list = new ArrayList<String>();
+		int i;
+		try {
+			m_s = new Scanner(new FileReader("resources/ServerConfig"));
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		while (m_s.hasNextLine()) {
+			list.add(m_s.nextLine());
+		}
+		
+		i = Integer.parseInt(list.get(id).split(" ")[1]);
+		
+		System.out.println(i);
+		return i;
+	}
 }
 

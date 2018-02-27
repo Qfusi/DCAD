@@ -118,18 +118,20 @@ public class FrontEnd {
 
 	private static int readFile() {
 		Scanner m_s = null;
+		ArrayList<String> list = new ArrayList<String>();
 		try {
-			m_s = new Scanner(new FileReader("resources/FrontEndFile"));
+			m_s = new Scanner(new FileReader("resources/FrontEndConfig"));
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-
-		int s = 0;
-
-		while (m_s.hasNext()) {
-			s = m_s.nextInt();
+		
+		while (m_s.hasNextLine()) {
+			list.add(m_s.nextLine());
 		}
-
-		return s;
+		
+		int i = Integer.parseInt(list.get(0).split(" ")[1]);
+		System.out.println(list.get(0));
+		
+		return i;
 	}
 }
