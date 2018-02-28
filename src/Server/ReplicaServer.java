@@ -2,17 +2,15 @@ package Server;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Scanner;
 
 import DCAD.GObject;
 import Message.DrawMessage;
 import Message.JoinMessage;
 import Message.Message;
-import Message.MessageConvertion;
+import Message.RemoveMessage;
 
 public class ReplicaServer {
 	/*private ArrayList<FrontEndConnection> m_connectedClients = new ArrayList<FrontEndConnection>();
@@ -24,10 +22,12 @@ public class ReplicaServer {
 	private long startTime;*/
 	
 	//---------------CURRENTLY IN USE
-	private ArrayList<Server.FrontEndConnection> m_connectedClients = new ArrayList<Server.FrontEndConnection>();
+	private ArrayList<ClientConnection> m_connectedClients = new ArrayList<ClientConnection>();
 	private ArrayList<GObject> m_GObjects  = new ArrayList<GObject>();
 	private FrontEndConnection m_connection;
 	private DatagramSocket m_socket;
+	private static InetAddress m_address = null;
+	private static int m_port;
 	private InetAddress m_feAddress = null;
 	private int m_fePort;
 	//-------------------------------
@@ -40,7 +40,7 @@ public class ReplicaServer {
 		try {
 			ReplicaServer instance = new ReplicaServer();
 			instance.connectToFrontEnd();
-			if (instance.m_connection.handShake())
+			if (instance.m_connection.handShake(m_address, m_port));
 				instance.listenForFrontEndMessages();
 		} catch(NumberFormatException e) {
 			System.err.println("Error: port number must be an integer.");
@@ -54,8 +54,14 @@ public class ReplicaServer {
 	private ReplicaServer() {
 		for (int i = 0; i < 3; i++) {
 			try {
-				m_socket = new DatagramSocket(readFile(i));
-				System.out.println("created socket with port: " + readFile(i));
+				try {
+					m_address = readAddressFromFile(i, new FileReader("resources/ServerConfig"));
+					m_port =  readPortFromFile(i, 1, new FileReader("resources/ServerConfig"));
+					m_socket = new DatagramSocket(m_port);
+					System.out.println("created socket with port: " + m_port);
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				}
 				break;
 			} catch (SocketException e) {
 				System.err.println("Could not connect to row: " + i);
@@ -73,22 +79,7 @@ public class ReplicaServer {
 		
 		
 		while(true) {
-			byte[] buf = new byte[1024];
-			DatagramPacket packet = new DatagramPacket(buf, buf.length);
-			Message message = null;
-			try {
-				m_socket.receive(packet);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			
-			try {
-				message = (Message) MessageConvertion.deserialize(packet.getData());
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			Message message = m_connection.receiveMessage();
 			
 			if (message instanceof JoinMessage) {
 				if (addClient(message.getAddress(), message.getPort())) {
@@ -99,14 +90,24 @@ public class ReplicaServer {
 					((JoinMessage) message).setMayJoin(false);
 					((JoinMessage) message).setReply(true);
 				}
+				 
 				
 				m_connection.sendMessage(message);
-			} /*else if (message instanceof DrawMessage) {
+			} else if (message instanceof DrawMessage) {
 				m_GObjects.add((GObject) message.getObj());
-				for (Server.FrontEndConnection cc : m_connectedClients) {
-					cc.sendMessage(cc.getAddress(), cc.getPort(), message);
+				for (ClientConnection cc : m_connectedClients) {
+					message.setAddress(cc.getAddress());
+					message.setPort(cc.getPort());
+					m_connection.sendMessage(message);
 				}
-			}*/
+			} else if (message instanceof RemoveMessage) {
+				m_GObjects.remove(m_GObjects.size() - 1);
+				for (ClientConnection cc : m_connectedClients) {
+					message.setAddress(cc.getAddress());
+					message.setPort(cc.getPort());
+					m_connection.sendMessage(message);
+				}
+			}
 		}
 		
 		//----------------------------------------------------------------------------
@@ -333,15 +334,11 @@ public class ReplicaServer {
 	}
 	
 	//WORKS
-	private static int readFile(int row) {
+	private static int readPortFromFile(int row, int collumn, FileReader file) {
 		Scanner m_s = null;
 		ArrayList<String> list = new ArrayList<String>();
 		int i;
-		try {
-			m_s = new Scanner(new FileReader("resources/ServerConfig"));
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
+		m_s = new Scanner(file);
 		
 		while (m_s.hasNextLine()) {
 			list.add(m_s.nextLine());
@@ -349,42 +346,52 @@ public class ReplicaServer {
 		
 		i = Integer.parseInt(list.get(row).split(" ")[1]);
 		
+		m_s.close();
 		return i;
+	}
+	private static InetAddress readAddressFromFile(int row, FileReader file) {
+		Scanner m_s = null;
+		ArrayList<String> list = new ArrayList<String>();
+		String address;
+		m_s = new Scanner(file);
+		
+		while (m_s.hasNextLine()) {
+			list.add(m_s.nextLine());
+		}
+		
+		address = list.get(row).split(" ")[0];
+		
+		m_s.close();
+		try {
+			return InetAddress.getByName(address);
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 	
 	//WORKS
 	private void connectToFrontEnd() {
-		Scanner m_s = null;
-		String s = null;
 		try {
-			m_s = new Scanner(new FileReader("resources/FrontEndConfig"));
+			m_feAddress = readAddressFromFile(1, new FileReader("resources/FrontEndConfig"));
+			m_fePort = readPortFromFile(1, 1, new FileReader("resources/FrontEndConfig"));
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
-		}
-		
-		while (m_s.hasNextLine()) {
-			s = m_s.nextLine();
-		}
-		
-		try {
-			m_feAddress = InetAddress.getByName(s.split(" ")[0]);
-			m_fePort = Integer.parseInt(s.split(" ")[1]);
+		} 
 			
-			m_connection = new FrontEndConnection(m_feAddress, m_fePort, m_socket);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
+		m_connection = new FrontEndConnection(m_feAddress, m_fePort, m_socket);
 	}
 	
 	private boolean addClient(InetAddress address, int port) {
-		for (FrontEndConnection c : m_connectedClients) {
-			if (c.getAddress() != address && c.getPort() != port) {
-				m_connectedClients.add(new Server.FrontEndConnection(address, port));
-				System.out.println("added client");
-				return true;
+		for (ClientConnection c : m_connectedClients) {
+			if (c.getAddress() == address && c.getPort() == port) {
+				System.out.println("didn't add client");
+				return false;
 			}
 		}
-		return false;
+		m_connectedClients.add(new ClientConnection(address, port));
+		System.out.println("added client");
+		return true;
 	}
 }
 

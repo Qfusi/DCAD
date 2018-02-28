@@ -29,8 +29,10 @@ public class FrontEndConnection {
 		m_socket = socket;
 	}
 
-	public boolean handShake() {
+	public boolean handShake(InetAddress address, int port) {
 		Message message = new JoinMessage();
+		message.setAddress(address);
+		message.setPort(port);
 		sendMessage(message);
 		
 		message = receiveMessage();
@@ -44,7 +46,8 @@ public class FrontEndConnection {
 	
 	public Message receiveMessage() {
 		Message message = null;
-		byte[] b = new byte[1500];
+		// IF EOFEXCEPTION OCCURS THIS BYTE ARRAY HAS BEEN EXCEEDED!!!!!!!!!!!!!!!!
+		byte[] b = new byte[1024];
 		DatagramPacket packet = new DatagramPacket(b, b.length);
 
 		try {

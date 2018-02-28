@@ -2,15 +2,15 @@ package Server;
 
 import java.net.InetAddress;
 
-public class ServerConnection {
+public class ClientConnection {
 	private  InetAddress m_address;
 	private  int m_port;
 	
-	public ServerConnection(InetAddress address, int port) {
-		m_address = address;
-		m_port = port;
+	public ClientConnection(InetAddress address, int port) {
+		setAddress(address);
+		setPort(port);
 	}
-	
+
 	public InetAddress getAddress() {
 		return m_address;
 	}

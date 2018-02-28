@@ -33,14 +33,15 @@ public class ServerConnection {
 		}
 	}
 
-	public boolean handshake() {
+	public boolean handshake(GUI gui) {
 		Message message = new JoinMessage();
 		sendMessage(message);
 
 		message = receiveMessage();
-
+		
 		if (message instanceof JoinMessage) {
 			if (((JoinMessage) message).getMayJoin()) {
+				gui.reDrawEverything(((JoinMessage) message).getList());
 				return true;
 			}
 		}
@@ -49,7 +50,8 @@ public class ServerConnection {
 
 	public Message receiveMessage() {
 		Message message = null;
-		byte[] b = new byte[1500];
+		// IF EOFEXCEPTION OCCURS THIS BYTE ARRAY HAS BEEN EXCEEDED!!!!!!!!!!!!!!!!
+		byte[] b = new byte[1024];
 		DatagramPacket packet = new DatagramPacket(b, b.length);
 
 		try {
