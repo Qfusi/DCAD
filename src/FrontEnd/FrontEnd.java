@@ -135,6 +135,7 @@ public class FrontEnd {
 					clientThread.start();
 				}
 			} else {
+				System.out.println("ServerListener received a message of: " + packet.getLength() + " bytes");
 				sendMessage(m_clientSocket, message.getAddress(), message.getPort(), message);
 			}
 		}
