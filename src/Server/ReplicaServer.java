@@ -63,11 +63,12 @@ public class ReplicaServer {
 				}
 				m_ID = i;
 				TCPsetup(m_ID);
-				if (m_serverConnection.getID() == 0) {
-					m_serverConnection.listenForNewConnections();
-				} else if (m_serverConnection.getID() == 1) {
-					
-				}
+				
+				new Thread(new Runnable() {
+					public void run() {
+						m_serverConnection.startDoingThings();
+					}
+				}).start();
 				break;
 			} catch (SocketException e) {
 				System.err.println("Could not create UDP socket on row: " + i);
@@ -127,6 +128,7 @@ public class ReplicaServer {
 				e.printStackTrace();
 			}
 			m_serverConnection = new ServerConnection(id, address, port);
+			System.out.println("created TCP recieve socket with port: " + port);
 			break;
 		case 1:
 			try {
@@ -137,6 +139,8 @@ public class ReplicaServer {
 				e.printStackTrace();
 			}
 			m_serverConnection = new ServerConnection(id, address, port, address, port2);
+			System.out.println("created TCP receive socket with port: " + port);
+			System.out.println("created TCP send socket with port: " + port2);
 			break;
 		case 2:
 			try {
@@ -147,6 +151,8 @@ public class ReplicaServer {
 				e.printStackTrace();
 			}
 			m_serverConnection = new ServerConnection(id, address, port, address, port2);
+			System.out.println("created TCP send socket with port: " + port);
+			System.out.println("created TCP send socket with port: " + port2);
 			break;
 		}
 	}

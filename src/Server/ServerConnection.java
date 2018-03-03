@@ -2,15 +2,15 @@ package Server;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 
-import DCAD.GObject;
-import Message.DrawMessage;
 import Message.JoinMessage;
 import Message.Message;
-import Message.RemoveMessage;
 
 public class ServerConnection {
 	private int m_ID;
@@ -45,6 +45,7 @@ public class ServerConnection {
 		m_port = port;
 		m_address2 = address2;
 		m_port2 = port2;
+		SocketAddress socketAddress;
 		
 		if (id == 1) {
 			try {
@@ -52,16 +53,57 @@ public class ServerConnection {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			
 			m_Csocket = new Socket();
+			socketAddress = new InetSocketAddress(address2, port2);
+			try {
+				m_Csocket.connect(socketAddress);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			
 		} else {
 			m_Csocket = new Socket();
+			socketAddress = new InetSocketAddress(address, port);
+			try {
+				m_Csocket.connect(socketAddress);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 			m_Csocket2 = new Socket();
+			socketAddress = new InetSocketAddress(address2, port2);
+			try {
+				m_Csocket2.connect(socketAddress);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 		}
 	}
 	
-	public void listenForNewConnections() {
-		System.out.println("SERVER MESSAGEEEEES?");
-		
+	public void startDoingThings() {
+		if (m_ID == 0)
+			listenForNewConnections();
+		else if (m_ID == 1) {
+			new Thread(new Runnable() {
+				public void run() {
+					listenForNewConnections();
+				}
+			}).start();
+			
+			connectToServer(m_Csocket, m_port2);
+		} else {
+			new Thread(new Runnable() {
+				public void run() {
+					connectToServer(m_Csocket, m_port);
+				}
+			}).start();
+			
+			connectToServer(m_Csocket2, m_port2);
+		}
+	}
+	
+	private void listenForNewConnections() {
+		System.out.println("Listening for new connections... ");
 		while(true) {
 			try {
 				final Socket socket;
@@ -74,9 +116,6 @@ public class ServerConnection {
 						listenForServerMessages(socket);
 					}
 				}).start();
-				
-				
-				
 				
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -92,7 +131,7 @@ public class ServerConnection {
 			
 			try {
 				ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
-				message = (Message) inputStream.readObject();	
+				message = (Message) inputStream.readObject();
 			} catch (IOException e) {
 				//TODO
 				//HANDLE DISCONNECTED SERVERS LEL
@@ -100,7 +139,27 @@ public class ServerConnection {
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			}
-			System.out.println("received message: " + message.getPort());
+			System.out.println("received message from: " + message.getPort());
+		}
+	}
+	
+	private void connectToServer(Socket socket, int port) {
+		while (true) {
+			try {
+				ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+				Message message = new JoinMessage();
+				message.setPort(socket.getLocalPort());
+				
+				outputStream.writeObject(message);
+				
+				System.out.println("sent message to port: " + port);
+				
+				Thread.sleep(5000);
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
