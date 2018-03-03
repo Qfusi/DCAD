@@ -57,16 +57,20 @@ public class ReplicaServer {
 					m_address = readAddressFromFile(i, new FileReader("resources/ServerConfig"));
 					m_port =  readPortFromFile(i, 1, new FileReader("resources/ServerConfig"));
 					m_socket = new DatagramSocket(m_port);
-					System.out.println("created socket with port: " + m_port);
+					System.out.println("created UDP socket with port: " + m_port);
 				} catch (FileNotFoundException e) {
 					e.printStackTrace();
 				}
 				m_ID = i;
 				TCPsetup(m_ID);
-				m_serverConnection.test();
+				if (m_serverConnection.getID() == 0) {
+					m_serverConnection.listenForNewConnections();
+				} else if (m_serverConnection.getID() == 1) {
+					
+				}
 				break;
 			} catch (SocketException e) {
-				System.err.println("Could not create socket on row: " + i);
+				System.err.println("Could not create UDP socket on row: " + i);
 			}
 		}
 	}
@@ -113,20 +117,22 @@ public class ReplicaServer {
 		InetAddress address = null;
 		int port = 0;
 		int port2 = 0;
-		try {
-			address = readAddressFromFile(id, new FileReader("resources/ServerConfig"));
-			port = readPortFromFile(id, 3, new FileReader("resources/ServerConfig"));
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
 		
 		switch (id) {
 		case 0:
-			m_serverConnection = new ServerConnection(address, port);
+			try {
+				address = readAddressFromFile(id, new FileReader("resources/ServerConfig"));
+				port = readPortFromFile(id, 2, new FileReader("resources/ServerConfig"));
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+			m_serverConnection = new ServerConnection(id, address, port);
 			break;
 		case 1:
 			try {
-				port2 = readPortFromFile(0, 3, new FileReader("resources/ServerConfig"));
+				address = readAddressFromFile(id, new FileReader("resources/ServerConfig"));
+				port = readPortFromFile(id, 2, new FileReader("resources/ServerConfig"));
+				port2 = readPortFromFile(0, 2, new FileReader("resources/ServerConfig"));
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -135,8 +141,8 @@ public class ReplicaServer {
 		case 2:
 			try {
 				address = readAddressFromFile(0, new FileReader("resources/ServerConfig"));
-				port = readPortFromFile(0, 3, new FileReader("resources/ServerConfig"));
-				port2 = readPortFromFile(1, 3, new FileReader("resources/ServerConfig"));
+				port = readPortFromFile(0, 2, new FileReader("resources/ServerConfig"));
+				port2 = readPortFromFile(1, 2, new FileReader("resources/ServerConfig"));
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -181,7 +187,7 @@ public class ReplicaServer {
 			list.add(m_s.nextLine());
 		}
 		
-		i = Integer.parseInt(list.get(row).split(" ")[1]);
+		i = Integer.parseInt(list.get(row).split(" ")[collumn]);
 		
 		m_s.close();
 		return i;
