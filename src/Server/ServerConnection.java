@@ -1,5 +1,6 @@
 package Server;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -11,37 +12,46 @@ public class ServerConnection {
 	private  int m_port;
 	
 	//---------------------socket2
-	private Socket m_Csocket;
+	private Socket m_Csocket, m_Csocket2;
 	private InetAddress m_address2;
 	private  int m_port2;
-	
-	//---------------------socket3
-	private Socket m_Csocket2;
-	private InetAddress m_address3;
-	private  int m_port3;
 	
 	//SERVER 1
 	public ServerConnection(InetAddress address, int port) {
 		m_address = address;
 		m_port = port;
+		
+		try {
+			m_Ssocket = new ServerSocket(m_port);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
-	//SERVER 2
-	public ServerConnection(InetAddress address, int port, InetAddress address2, int port2) {
+	//SERVER 2 & 3
+	public ServerConnection(int id, InetAddress address, int port, InetAddress address2, int port2) {
 		m_address = address;
 		m_port = port;
 		m_address2 = address2;
 		m_port2 = port2;
+		
+		if (id == 1) {
+			try {
+				m_Ssocket = new ServerSocket(m_port);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			m_Csocket = new Socket();
+		} else {
+			m_Csocket = new Socket();
+			m_Csocket2 = new Socket();
+		}
+		
 	}
 	
-	//SERVER 3
-	public ServerConnection(InetAddress address, int port, InetAddress address2, int port2, InetAddress address3, int port3) {
-		m_address = address;
-		m_port = port;
-		m_address2 = address2;
-		m_port2 = port2;
-		m_address3 = address3;
-		m_port3 = port3;
+	public void test() {
+		System.out.println("port: " + m_port);
+		System.out.println("port2: " + m_port2);
 	}
 	
 	public InetAddress getAddress() {

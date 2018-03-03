@@ -63,6 +63,7 @@ public class ReplicaServer {
 				}
 				m_ID = i;
 				TCPsetup(m_ID);
+				m_serverConnection.test();
 				break;
 			} catch (SocketException e) {
 				System.err.println("Could not create socket on row: " + i);
@@ -112,10 +113,9 @@ public class ReplicaServer {
 		InetAddress address = null;
 		int port = 0;
 		int port2 = 0;
-		int port3 = 0;
 		try {
 			address = readAddressFromFile(id, new FileReader("resources/ServerConfig"));
-			port = readPortFromFile(id, 2, new FileReader("resources/ServerConfig"));
+			port = readPortFromFile(id, 3, new FileReader("resources/ServerConfig"));
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
@@ -130,16 +130,17 @@ public class ReplicaServer {
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
-			m_serverConnection = new ServerConnection(address, port, address, port2);
+			m_serverConnection = new ServerConnection(id, address, port, address, port2);
 			break;
 		case 2:
 			try {
-				port2 = readPortFromFile(0, 3, new FileReader("resources/ServerConfig"));
-				port3 = readPortFromFile(1, 3, new FileReader("resources/ServerConfig"));
+				address = readAddressFromFile(0, new FileReader("resources/ServerConfig"));
+				port = readPortFromFile(0, 3, new FileReader("resources/ServerConfig"));
+				port2 = readPortFromFile(1, 3, new FileReader("resources/ServerConfig"));
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
-			m_serverConnection = new ServerConnection(address, port, address, port2, address, port3);
+			m_serverConnection = new ServerConnection(id, address, port, address, port2);
 			break;
 		}
 	}
