@@ -39,6 +39,7 @@ public class FrontEnd {
 		});
 		serverThread.start();
 	}
+	
 
 	private FrontEnd(int portNumber) {
 		try {
@@ -48,6 +49,7 @@ public class FrontEnd {
 				m_serverSocket = new DatagramSocket(portNumber);
 		} catch (SocketException e) {
 			e.printStackTrace();
+			System.out.println("fel");
 		}
 	}
 
