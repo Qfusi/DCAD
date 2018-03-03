@@ -47,6 +47,7 @@ public class ServerConnection {
 		m_port2 = port2;
 		SocketAddress socketAddress;
 		
+		//---------------------Server 2
 		if (id == 1) {
 			try {
 				m_Ssocket = new ServerSocket(m_port);
@@ -62,7 +63,9 @@ public class ServerConnection {
 				e1.printStackTrace();
 			}
 			
-		} else {
+		} 
+		//---------------------Server 3
+		else {
 			m_Csocket = new Socket();
 			socketAddress = new InetSocketAddress(address, port);
 			try {
@@ -80,6 +83,7 @@ public class ServerConnection {
 		}
 	}
 	
+	//-----------------------------------------Initialises the different server behaviour
 	public void startDoingThings() {
 		if (m_ID == 0)
 			listenForNewConnections();
@@ -102,6 +106,7 @@ public class ServerConnection {
 		}
 	}
 	
+	//--------------------------------------------Listens for new server connections
 	private void listenForNewConnections() {
 		System.out.println("Listening for new connections... ");
 		while(true) {
@@ -123,6 +128,7 @@ public class ServerConnection {
 		}
 	}
 	
+	//---------------------------------------------Listens for messages from already established server connections
 	private void listenForServerMessages(Socket socket) {
 		System.out.println("Listening for server messages... ");
 		
@@ -143,6 +149,7 @@ public class ServerConnection {
 		}
 	}
 	
+	//----------------------------------------------Constantly tries to connect to specified server
 	private void connectToServer(Socket socket, int port) {
 		while (true) {
 			try {

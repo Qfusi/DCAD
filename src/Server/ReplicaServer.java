@@ -38,7 +38,7 @@ public class ReplicaServer {
 		}
 		try {
 			ReplicaServer instance = new ReplicaServer();
-			instance.connectToFrontEnd();
+			instance.UDPsetup();
 			if (instance.m_FEconnection.handShake(m_address, m_port));
 				instance.listenForFrontEndMessages();
 		} catch(NumberFormatException e) {
@@ -49,10 +49,10 @@ public class ReplicaServer {
 
 	//--------------------------------------------------------------------------------------
 
-	//STARTING UP SEVERAL SERVER WORKS
 	private ReplicaServer() {
 		for (int i = 0; i < 3; i++) {
 			try {
+				//--------------------------UDP
 				try {
 					m_address = readAddressFromFile(i, new FileReader("resources/ServerConfig"));
 					m_port =  readPortFromFile(i, 1, new FileReader("resources/ServerConfig"));
@@ -61,6 +61,7 @@ public class ReplicaServer {
 				} catch (FileNotFoundException e) {
 					e.printStackTrace();
 				}
+				//--------------------------TCP
 				m_ID = i;
 				TCPsetup(m_ID);
 				
@@ -77,7 +78,6 @@ public class ReplicaServer {
 	}
 	//--------------------------------------------------------------------------------------
 
-	//SERVER NEEDS TO HAVE TWO THREADS, ONE FOR SERVER MESSAGES AND ONE FOR FRONTEND
 	private void listenForFrontEndMessages() {
 		System.out.println("Waiting for client messages... ");
 		
@@ -114,6 +114,7 @@ public class ReplicaServer {
 		}
 	}
 	
+	//------------------------------------Sets up connection with replica servers
 	private void TCPsetup(int id) {
 		InetAddress address = null;
 		int port = 0;
@@ -157,8 +158,8 @@ public class ReplicaServer {
 		}
 	}
 	
-	//WORKS
-	private void connectToFrontEnd() {
+	//------------------------------------------Sets up connection with FrontEnd
+	private void UDPsetup() {
 		try {
 			m_feAddress = readAddressFromFile(1, new FileReader("resources/FrontEndConfig"));
 			m_fePort = readPortFromFile(1, 1, new FileReader("resources/FrontEndConfig"));
