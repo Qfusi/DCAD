@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 import Message.MessageConvertion;
+import Message.NewActiveServerMessage;
 import Message.RemoveMessage;
 import Message.Message;
 import Message.DrawMessage;
@@ -25,6 +26,10 @@ public class FrontEnd {
 	private DatagramSocket m_clientSocket;
 	private DatagramSocket m_serverSocket;
 	
+	//--------Active Server
+	private int m_serverPort;
+	private InetAddress m_serverAddress;
+	
 	public static void main(String[] args) {
 		serverListener = new FrontEnd(readFile(1));
 		clientListener = new FrontEnd(readFile(0));
@@ -38,6 +43,13 @@ public class FrontEnd {
 			}
 		});
 		serverThread.start();
+		
+		clientThread = new Thread(new Runnable() {
+			public void run() {
+				clientListener.listenForClientMessages();
+			}
+		});
+		clientThread.start();
 	}
 
 	private FrontEnd(int portNumber) {
@@ -51,9 +63,7 @@ public class FrontEnd {
 		}
 	}
 
-	private void listenForClientMessages(InetAddress address, int port) {
-		InetAddress serverAddress = address;
-		int serverPort  = port;
+	private void listenForClientMessages() {
 		System.out.println("Listening for Client messages...");
 		
 		while (true) {
@@ -82,13 +92,13 @@ public class FrontEnd {
 				message.setAddress(packet.getAddress());
 				message.setPort(packet.getPort());
 				
-				sendMessage(m_serverSocket, serverAddress, serverPort, message);
+				sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
 			} else if (message instanceof DrawMessage) {
 				System.out.println("ClientListener received draw message of: " + packet.getLength() + " bytes");	
-				sendMessage(m_serverSocket, serverAddress, serverPort, message);
+				sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
 			} else if (message instanceof RemoveMessage) {
 				System.out.println("ClientListener received remove message of: " + packet.getLength() + " bytes");
-				sendMessage(m_serverSocket, serverAddress, serverPort, message);
+				sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
 			}
 		}
 	}
@@ -115,24 +125,24 @@ public class FrontEnd {
 				e.printStackTrace();
 			}
 			
-			if (message instanceof JoinMessage) {
+			if (message instanceof NewActiveServerMessage) {
+				System.out.println("ServerListener received NewActiveServer message of: " + packet.getLength() + " bytes");
+				System.out.println("-----------------------------------");
+				System.out.println("New active Server with port: " + message.getPort());
+				System.out.println("-----------------------------------");
+				((NewActiveServerMessage) message).setOkay(true);
+				sendMessage(m_serverSocket, packet.getAddress(), packet.getPort(), message);
+				
+				//Updating the server info so that client messages are sent to the right server	
+				clientListener.setServerAddress(message.getAddress());
+				clientListener.setServerPort(message.getPort());
+			}
+			else if (message instanceof JoinMessage) {
 				System.out.println("ServerListener received join message of: " + packet.getLength() + " bytes");
 				if (((JoinMessage) message).isReply()) {
 					sendMessage(m_clientSocket, message.getAddress(), message.getPort(), message);
 				} else if (!((JoinMessage) message).isReply()) {
-					((JoinMessage) message).setMayJoin(true);
-					sendMessage(m_serverSocket, packet.getAddress(), packet.getPort(), message);
-					
-					//Now that the serverListener is up we can start the clientListener
-					final InetAddress address = message.getAddress();
-					final int port = message.getPort();
-					
-					clientThread = new Thread(new Runnable() {
-						public void run() {
-							clientListener.listenForClientMessages(address, port);
-						}
-					});
-					clientThread.start();
+
 				}
 			} else {
 				System.out.println("ServerListener received a message of: " + packet.getLength() + " bytes");
@@ -183,6 +193,22 @@ public class FrontEnd {
 		int i = Integer.parseInt(list.get(row).split(" ")[1]);
 		
 		return i;
+	}
+	
+	private InetAddress getServerAddress() {
+		return m_serverAddress;
+	}
+	
+	private void setServerAddress(InetAddress address) {
+		m_serverAddress = address;
+	}
+	
+	private int getServerPort() {
+		return m_serverPort;
+	}
+	
+	private void setServerPort(int port) {
+		m_serverPort = port;
 	}
 	
 	private DatagramSocket getServerSocket() {

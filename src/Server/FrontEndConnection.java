@@ -11,6 +11,7 @@ import Message.JoinMessage;
 import Message.LeaveMessage;
 import Message.Message;
 import Message.MessageConvertion;
+import Message.NewActiveServerMessage;
 import Message.RemoveMessage;
 
 public class FrontEndConnection {
@@ -30,7 +31,7 @@ public class FrontEndConnection {
 	}
 
 	public boolean handShake(InetAddress address, int port) {
-		Message message = new JoinMessage();
+		Message message = new NewActiveServerMessage();
 		message.setAddress(address);
 		message.setPort(port);
 		sendMessage(message);
@@ -65,13 +66,13 @@ public class FrontEndConnection {
 		}
 
 		if (message instanceof JoinMessage)
-			System.out.println("received join message");
+			System.out.println("(UDP side) received join message");
 		else if (message instanceof DrawMessage)
-			System.out.println("received draw message");
+			System.out.println("(UDP side) received draw message");
 		else if (message instanceof RemoveMessage)
-			System.out.println("received remove message");
+			System.out.println("(UDP side) received remove message");
 		else if (message instanceof LeaveMessage)
-			System.out.println("received leave message");
+			System.out.println("(UDP side) received leave message");
 
 		return message;
 	}
@@ -90,13 +91,13 @@ public class FrontEndConnection {
 			e.printStackTrace();
 		}
 		if (message instanceof JoinMessage)
-			System.out.println("sent join message");
+			System.out.println("(UDP side) sent join message");
 		else if (message instanceof DrawMessage)
-			System.out.println("sent draw message");
+			System.out.println("(UDP side) sent draw message");
 		else if (message instanceof RemoveMessage)
-			System.out.println("sent remove message");
+			System.out.println("(UDP side) sent remove message");
 		else if (message instanceof LeaveMessage)
-			System.out.println("sent leave message");
+			System.out.println("(UDP side) sent leave message");
 	}
 	public InetAddress getAddress() {
 		return m_address;

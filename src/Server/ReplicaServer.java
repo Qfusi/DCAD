@@ -68,7 +68,7 @@ public class ReplicaServer {
 				}
 				//--------------------------TCP
 				m_ID = i;
-				TCPsetup(m_ID);
+				TCPsetup();
 				break;
 			} catch (SocketException e) {
 				System.err.println("Could not create UDP socket on row: " + i);
@@ -78,7 +78,7 @@ public class ReplicaServer {
 	//--------------------------------------------------------------------------------------
 
 	private void listenForFrontEndMessages() {
-		System.out.println("Waiting for front end messages... ");
+		System.out.println("(UDP side) Listening for front end messages... ");
 		
 		while(true) {
 			Message message = m_FEconnection.receiveMessage();
@@ -114,7 +114,7 @@ public class ReplicaServer {
 	}
 	
 	private void listenForNewServerConnections() {
-		System.out.println("Listening for new connections... ");
+		System.out.println("(TCP side) Listening for new connections...");
 		while(true) {
 			try {
 				Message message = null;
@@ -130,7 +130,7 @@ public class ReplicaServer {
 				
 				if (message instanceof ServerJoinMessage) {
 					m_connectedServers.add(new ServerConnection(this, m_ID, message.getAddress(), message.getPort(), socket));
-					System.out.println("received new connection from: " + message.getPort());
+					System.out.println("(TCP side) received new connection from: " + message.getPort());
 				}
 				
 				new Thread(new Runnable() {
@@ -146,7 +146,8 @@ public class ReplicaServer {
 	}
 	
 	private void listenForServerMessages(Socket socket) {
-		System.out.println("Listening for server messages... ");
+		System.out.println("(TCP side) Listening for server messages from socket: " + socket.getPort() +"...");
+		System.out.println("--------------------------------------------------------------");
 		
 		while (true) {
 			Message message = null;
@@ -154,29 +155,39 @@ public class ReplicaServer {
 			try {
 				ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
 				message = (Message) inputStream.readObject();
+				
+				System.out.println("(TCP side) received message from: " + message.getPort());
 			} catch (IOException e) {
-				System.err.println("A server has disconnected (Listening method)");
+				System.err.println("Server " + socket.getPort() + " has disconnected (Exception found in ReplicaServer receive method)");
+				
+				ServerConnection connectionToRemove = null;
+				for (ServerConnection SC : m_connectedServers) {
+					if (SC.getSocket() == socket)
+						connectionToRemove = SC;
+				}
+				m_connectedServers.remove(connectionToRemove);
 				
 				//TODO ------------------------------------------ELECTION BULLSHIT
-				
+				break;
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			}
-			System.out.println("received message from: " + message.getPort());
 		}
 	}
 	
-	//------------------------------------Sets up connection with replica servers
-	private void TCPsetup(int id) {
+	//----------------------------------------------------------------------------Sets up connection with replica servers
+	private void TCPsetup() {
+		SocketAddress serveraddress;
 		InetAddress address = null;
 		InetAddress address2 = null;
 		int port = 0;
 		int port2 = 0;
 		
-		switch (id) {
+		switch (m_ID) {
 		case 0:
+			//---------------------------------------------------------------------------------------------------------Server 1
 			try {
-				port = readPortFromFile(id, 2, new FileReader("resources/ServerConfig"));
+				port = readPortFromFile(m_ID, 2, new FileReader("resources/ServerConfig"));
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -196,10 +207,11 @@ public class ReplicaServer {
 			}).start();
 			break;
 		case 1:
+			//---------------------------------------------------------------------------------------------------------Server 2
 			try {
-				address = readAddressFromFile(id, new FileReader("resources/ServerConfig"));
+				address = readAddressFromFile(m_ID, new FileReader("resources/ServerConfig"));
 				address2 = readAddressFromFile(0, new FileReader("resources/ServerConfig"));
-				port = readPortFromFile(id, 2, new FileReader("resources/ServerConfig"));
+				port = readPortFromFile(m_ID, 2, new FileReader("resources/ServerConfig"));
 				port2 = readPortFromFile(0, 2, new FileReader("resources/ServerConfig"));
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -223,7 +235,7 @@ public class ReplicaServer {
 			//------------------------------------------Client socket
 			
 			m_Csocket = new Socket();
-			SocketAddress serveraddress = new InetSocketAddress(address, port2);
+			serveraddress = new InetSocketAddress(address, port2);
 			try {
 				m_Csocket.connect(serveraddress);
 			} catch (IOException e1) {
@@ -232,24 +244,66 @@ public class ReplicaServer {
 			
 			m_connectedServers.add(new ServerConnection(this, m_ID, address2, port2, m_Csocket));
 			
-			m_connectedServers.get(0).connectToServer();
+			new Thread(new Runnable() {
+				public void run() {
+					m_connectedServers.get(0).connectToServer();
+				}
+			}).start();
 			break;
 		case 2:
+			//---------------------------------------------------------------------------------------------------------Server 3
 			try {
 				address = readAddressFromFile(0, new FileReader("resources/ServerConfig"));
+				address2 = readAddressFromFile(1, new FileReader("resources/ServerConfig"));
 				port = readPortFromFile(0, 2, new FileReader("resources/ServerConfig"));
 				port2 = readPortFromFile(1, 2, new FileReader("resources/ServerConfig"));
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
-			//m_serverConnection = new ServerConnection(id, address, port, address, port2);
+			//--------------------------------------------Client socket 1
+			
+			m_Csocket = new Socket();
+			serveraddress = new InetSocketAddress(address, port);
+			try {
+				m_Csocket.connect(serveraddress);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			
+			m_connectedServers.add(new ServerConnection(this, m_ID, address, port, m_Csocket));
+			
+			//---------------------------------------------Client socket 2
+			
+			m_Csocket = new Socket();
+			serveraddress = new InetSocketAddress(address2, port2);
+			try {
+				m_Csocket.connect(serveraddress);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			
+			m_connectedServers.add(new ServerConnection(this, m_ID, address2, port2, m_Csocket));
+			
 			System.out.println("created TCP send socket with port: " + port);
 			System.out.println("created TCP send socket with port: " + port2);
+			System.out.println("--------------------------------------------------");
+			
+			
+			new Thread(new Runnable() {
+				public void run() {
+					m_connectedServers.get(0).connectToServer();
+				}
+			}).start();
+			new Thread(new Runnable() {
+				public void run() {
+					m_connectedServers.get(1).connectToServer();
+				}
+			}).start();
 			break;
 		}
 	}
 	
-	//------------------------------------------Sets up connection with FrontEnd
+	//-------------------------------------------------------------------------------------Sets up connection with FrontEnd
 	private void UDPsetup() {
 		try {
 			m_feAddress = readAddressFromFile(1, new FileReader("resources/FrontEndConfig"));

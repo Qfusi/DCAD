@@ -1,15 +1,11 @@
 package Server;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
 
-import Message.JoinMessage;
 import Message.Message;
 import Message.ServerJoinMessage;
 
@@ -38,24 +34,39 @@ public class ServerConnection {
 				
 				outputStream.writeObject(message);
 				
-				System.out.println("sent message to port: " + m_port);
+				System.out.println("(TCP side) sent message to port: " + m_port);
 				
 				Thread.sleep(5000);
 			} catch (IOException e) {
-				System.err.println("A server has disconnected (Send method)");
+				System.err.println("Server " + m_socket.getPort() + " has disconnected (Exception found in ServerConnection Send method)");
 				
-				electionProtocol();
+				//TODO ------------------------------------------ELECTION BULLSHIT
 				
+				reconnect();
+				
+				try {
+					Thread.sleep(10000);
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
 	}
 	
-	private void electionProtocol() {
-		if (m_ID == 1) {
-			
+	private void reconnect() {
+		m_socket = new Socket();
+		InetSocketAddress serveraddress = new InetSocketAddress(m_address, m_port);
+		try {
+			m_socket.connect(serveraddress);
+		} catch (IOException e1) {
+			System.err.println("Tried to reconnect");
 		}
+	}
+	
+	public Socket getSocket() {
+		return m_socket;
 	}
 	
 	public InetAddress getAddress() {
