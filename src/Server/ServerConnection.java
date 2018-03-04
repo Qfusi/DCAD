@@ -139,9 +139,7 @@ public class ServerConnection {
 				ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
 				message = (Message) inputStream.readObject();
 			} catch (IOException e) {
-				//TODO
-				//HANDLE DISCONNECTED SERVERS LEL
-				e.printStackTrace();
+				System.err.println("A server has disconnected (Listening method)");
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -163,7 +161,7 @@ public class ServerConnection {
 				
 				Thread.sleep(5000);
 			} catch (IOException e) {
-				e.printStackTrace();
+				System.err.println("A server has disconnected (Send method");
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
