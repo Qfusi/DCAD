@@ -47,7 +47,7 @@ public class FrontEndConnection {
 	
 	public Message receiveMessage() {
 		Message message = null;
-		// IF EOFEXCEPTION OCCURS THIS BYTE ARRAY HAS BEEN EXCEEDED!!!!!!!!!!!!!!!!
+		// IF EOFEXCEPTION OCCURS THIS BYTE ARRAY HAS BEEN EXCEEDED!!!!!!!!!!!!!!!!!
 		byte[] b = new byte[1024];
 		DatagramPacket packet = new DatagramPacket(b, b.length);
 
