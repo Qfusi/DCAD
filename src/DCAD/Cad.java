@@ -7,7 +7,7 @@ package DCAD;
 
 import Message.DrawMessage;
 import Message.JoinMessage;
-import Message.LeaveMessage;
+import Message.DisconnectMessage;
 import Message.Message;
 import Message.RemoveMessage;
 
@@ -51,7 +51,7 @@ public class Cad {
 				drawObject(obj);
 			} else if (message instanceof RemoveMessage) {
 				removeObject();
-			} else if (message instanceof LeaveMessage) {
+			} else if (message instanceof DisconnectMessage) {
 				//TODO Do things
 			}
 		}

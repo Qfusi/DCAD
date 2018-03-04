@@ -10,18 +10,19 @@ import Message.Message;
 import Message.ServerJoinMessage;
 
 public class ServerConnection {
-	private int m_ID;
-	
-	//---------------------socket1
-	private Socket m_socket;
+	private ReplicaServer m_rs;
+	private int m_id;
 	private  InetAddress m_address;
 	private  int m_port;
+	private Socket m_socket;
+
 	
-	public ServerConnection(ReplicaServer RS, int id, InetAddress address, int port, Socket socket) {
-		m_socket = socket;
-		m_ID = id;
+	public ServerConnection(ReplicaServer rs, int id, InetAddress address, int port, Socket socket) {
+		m_rs = rs;
+		m_id = id;
 		m_address = address;
 		m_port = port;
+		m_socket = socket;
 	}
 	
 	//----------------------------------------------Constantly tries to connect to specified server
@@ -29,7 +30,7 @@ public class ServerConnection {
 		while (true) {
 			try {
 				ObjectOutputStream outputStream = new ObjectOutputStream(m_socket.getOutputStream());
-				Message message = new ServerJoinMessage(m_ID, false);
+				Message message = new ServerJoinMessage(m_id, false);
 				message.setPort(m_socket.getLocalPort());
 				
 				outputStream.writeObject(message);
@@ -41,6 +42,10 @@ public class ServerConnection {
 				System.err.println("Server " + m_socket.getPort() + " has disconnected (Exception found in ServerConnection Send method)");
 				
 				//TODO ------------------------------------------ELECTION BULLSHIT
+				
+				
+				
+				//---------------------------------------------
 				
 				reconnect();
 				
@@ -86,6 +91,6 @@ public class ServerConnection {
 	}
 	
 	public int getID() {
-		return m_ID;
+		return m_id;
 	}
 }

@@ -3,26 +3,26 @@ import java.io.Serializable;
 import java.net.InetAddress;
 
 public abstract class Message implements Serializable{
-	private InetAddress address;
-	private int port;
+	protected InetAddress m_address;
+	protected int m_port;
 	public Message() {
 	}
 	
 	public abstract Object getObj();
 
 	public InetAddress getAddress() {
-		return address;
+		return m_address;
 	}
 
 	public void setAddress(InetAddress address) {
-		this.address = address;
+		this.m_address = address;
 	}
 	
 	public int getPort() {
-		return port;
+		return m_port;
 	}
 
 	public void setPort(int port) {
-		this.port = port;
+		this.m_port = port;
 	}
 }

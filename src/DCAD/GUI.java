@@ -93,7 +93,7 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 	}
 
 	public void windowClosing(WindowEvent e) {
-		System.exit(0);
+		m_SC.requestDisconnect();
 	}
 
 	public void windowDeactivated(WindowEvent e) {

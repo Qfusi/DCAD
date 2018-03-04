@@ -8,7 +8,7 @@ import java.net.InetAddress;
 
 import Message.DrawMessage;
 import Message.JoinMessage;
-import Message.LeaveMessage;
+import Message.DisconnectMessage;
 import Message.Message;
 import Message.MessageConvertion;
 import Message.NewActiveServerMessage;
@@ -71,8 +71,8 @@ public class FrontEndConnection {
 			System.out.println("(UDP side) received draw message");
 		else if (message instanceof RemoveMessage)
 			System.out.println("(UDP side) received remove message");
-		else if (message instanceof LeaveMessage)
-			System.out.println("(UDP side) received leave message");
+		else if (message instanceof DisconnectMessage)
+			System.out.println("(UDP side) received disconnect message");
 
 		return message;
 	}
@@ -96,8 +96,8 @@ public class FrontEndConnection {
 			System.out.println("(UDP side) sent draw message");
 		else if (message instanceof RemoveMessage)
 			System.out.println("(UDP side) sent remove message");
-		else if (message instanceof LeaveMessage)
-			System.out.println("(UDP side) sent leave message");
+		else if (message instanceof DisconnectMessage)
+			System.out.println("(UDP side) sent disconnect message");
 	}
 	public InetAddress getAddress() {
 		return m_address;

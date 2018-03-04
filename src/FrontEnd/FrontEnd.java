@@ -16,7 +16,7 @@ import Message.RemoveMessage;
 import Message.Message;
 import Message.DrawMessage;
 import Message.JoinMessage;
-import Message.LeaveMessage;
+import Message.DisconnectMessage;
 
 public class FrontEnd {
 	static Thread serverThread;
@@ -99,6 +99,9 @@ public class FrontEnd {
 			} else if (message instanceof RemoveMessage) {
 				System.out.println("ClientListener received remove message of: " + packet.getLength() + " bytes");
 				sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
+			} else if (message instanceof DisconnectMessage) {
+				System.out.println("ClientListener received disconnect message of: " + packet.getLength() + " bytes");
+				sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
 			}
 		}
 	}
@@ -172,7 +175,7 @@ public class FrontEnd {
 			System.out.println("Sent draw message");
 		else if (message instanceof RemoveMessage)
 			System.out.println("Sent remove message");
-		else if (message instanceof LeaveMessage)
+		else if (message instanceof DisconnectMessage)
 			System.out.println("Sent leave message");
 		//---------------------------------------------------------------------
 	}

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 import DCAD.GObject;
+import Message.DisconnectMessage;
 import Message.DrawMessage;
 import Message.JoinMessage;
 import Message.Message;
@@ -43,7 +44,6 @@ public class ReplicaServer {
 		}
 		try {
 			ReplicaServer instance = new ReplicaServer();
-			instance.UDPsetup();
 			if (instance.m_FEconnection.handShake(m_address, m_port));
 				instance.listenForFrontEndMessages();
 		} catch(NumberFormatException e) {
@@ -57,7 +57,7 @@ public class ReplicaServer {
 	private ReplicaServer() {
 		for (int i = 0; i < 3; i++) {
 			try {
-				//--------------------------UDP
+				//--------------------------UDP Setup
 				try {
 					m_address = readAddressFromFile(i, new FileReader("resources/ServerConfig"));
 					m_port =  readPortFromFile(i, 1, new FileReader("resources/ServerConfig"));
@@ -66,7 +66,8 @@ public class ReplicaServer {
 				} catch (FileNotFoundException e) {
 					e.printStackTrace();
 				}
-				//--------------------------TCP
+				UDPsetup();
+				//--------------------------TCP Setup
 				m_ID = i;
 				TCPsetup();
 				break;
@@ -109,6 +110,13 @@ public class ReplicaServer {
 					message.setPort(cc.getPort());
 					m_FEconnection.sendMessage(message);
 				}
+			} else if (message instanceof DisconnectMessage) {
+				ClientConnection toBeRemoved = null;
+				for (ClientConnection cc : m_connectedClients) {
+					if (cc.getPort() == message.getPort())
+						toBeRemoved = cc;
+				}
+				m_connectedClients.remove(toBeRemoved);
 			}
 		}
 	}
@@ -168,6 +176,10 @@ public class ReplicaServer {
 				m_connectedServers.remove(connectionToRemove);
 				
 				//TODO ------------------------------------------ELECTION BULLSHIT
+				
+				
+				
+				//---------------------------------------------
 				break;
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
