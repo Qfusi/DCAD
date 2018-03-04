@@ -27,6 +27,12 @@ public class ServerConnection {
 	
 	//----------------------------------------------Constantly tries to connect to specified server
 	public void connectToServer() {
+		new Thread(new Runnable() {
+			public void run() {
+				m_rs.listenForServerMessages(m_socket);
+			}
+		}).start();
+		
 		while (true) {
 			try {
 				ObjectOutputStream outputStream = new ObjectOutputStream(m_socket.getOutputStream());
@@ -57,6 +63,17 @@ public class ServerConnection {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+		}
+	}
+	
+	public void sendMessage(Message message) {
+		try {
+			ObjectOutputStream outputStream = new ObjectOutputStream(m_socket.getOutputStream());
+			outputStream.writeObject(message);
+			
+			System.out.println("sent a message");
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	

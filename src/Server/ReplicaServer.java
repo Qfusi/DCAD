@@ -153,7 +153,7 @@ public class ReplicaServer {
 		}
 	}
 	
-	private void listenForServerMessages(Socket socket) {
+	public void listenForServerMessages(Socket socket) {
 		System.out.println("(TCP side) Listening for server messages from socket: " + socket.getPort() +"...");
 		System.out.println("--------------------------------------------------------------");
 		
@@ -163,6 +163,9 @@ public class ReplicaServer {
 			try {
 				ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
 				message = (Message) inputStream.readObject();
+				
+				
+				//TODO skicka till rätt person for loop?
 				
 				System.out.println("(TCP side) received message from: " + message.getPort());
 			} catch (IOException e) {
