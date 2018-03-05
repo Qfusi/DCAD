@@ -11,8 +11,10 @@ import java.util.Scanner;
 import DCAD.GObject;
 import Message.DisconnectMessage;
 import Message.DrawMessage;
+import Message.ElectionMessage;
 import Message.JoinMessage;
 import Message.Message;
+import Message.NewActiveServerMessage;
 import Message.RemoveMessage;
 import Message.ServerJoinMessage;
 
@@ -21,7 +23,7 @@ public class ReplicaServer {
 	private ArrayList<ClientConnection> m_connectedClients = new ArrayList<ClientConnection>();
 	private ArrayList<ServerConnection> m_connectedServers = new ArrayList<ServerConnection>();
 	private ArrayList<GObject> m_GObjects  = new ArrayList<GObject>();
-	private int m_ID;
+	private static int m_ID;
 	
 	//-------------------FE
 	private FrontEndConnection m_FEconnection;
@@ -37,6 +39,9 @@ public class ReplicaServer {
 	private ServerSocket m_Ssocket;
 	private Socket m_Csocket;
 	
+	//-------------------Election
+	private int m_receivedElectionID = 15;
+	
 	public static void main(String[] args){
 		if(args.length < 1) {
 			System.err.println("Usage: java Server portnumber");
@@ -44,6 +49,7 @@ public class ReplicaServer {
 		}
 		try {
 			ReplicaServer instance = new ReplicaServer();
+			
 			if (instance.m_FEconnection.handShake(m_address, m_port));
 				instance.listenForFrontEndMessages();
 		} catch(NumberFormatException e) {
@@ -154,20 +160,43 @@ public class ReplicaServer {
 	}
 	
 	public void listenForServerMessages(Socket socket) {
-		System.out.println("(TCP side) Listening for server messages from socket: " + socket.getPort() +"...");
+		System.out.println("(TCP side) Listening for server messages from socket: " + socket.getPort() + "...");
 		System.out.println("--------------------------------------------------------------");
 		
 		while (true) {
 			Message message = null;
 			
 			try {
+				//-----------------------------------------------------------------------------RECEIVE
 				ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
 				message = (Message) inputStream.readObject();
 				
+				if (message instanceof ServerJoinMessage)
+					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ServerJoinMessage from server: " + ((ServerJoinMessage)message).getID() + " on port " + message.getPort());
+				else if (message instanceof NewActiveServerMessage)
+					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a NewActiveServerMessage from port: " + message.getPort());
+				else if (message instanceof ElectionMessage)
+					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionMessage from port: " + message.getPort() + " with ID: " + ((ElectionMessage)message).getID());
 				
-				//TODO skicka till rätt person for loop?
 				
-				System.out.println("(TCP side) received message from: " + message.getPort());
+				
+				
+				//-----------------------------------------------------------------------------REPLY
+				
+				ServerConnection temp = getServerConnection(message.getPort());
+				
+				if (message instanceof ElectionMessage) {
+					//check if message is not a reply and if server ID is smaller than received one - reply with own ID if that is the case
+					if (!((ElectionMessage)message).isReply() && m_ID < ((ElectionMessage)message).getID())
+						temp.sendMessage(new ElectionMessage(m_ID, true));
+					else {
+						System.out.println("hej");
+						m_receivedElectionID = ((ElectionMessage) message).getID();
+					}
+				}
+				
+				
+				//-----------------------------------
 			} catch (IOException e) {
 				System.err.println("Server " + socket.getPort() + " has disconnected (Exception found in ReplicaServer receive method)");
 				
@@ -178,11 +207,9 @@ public class ReplicaServer {
 				}
 				m_connectedServers.remove(connectionToRemove);
 				
-				//TODO ------------------------------------------ELECTION BULLSHIT
+				//---------HAVE ELECTION :D -WORKS
+				electionProtocol();
 				
-				
-				
-				//---------------------------------------------
 				break;
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
@@ -190,7 +217,30 @@ public class ReplicaServer {
 		}
 	}
 	
-	//----------------------------------------------------------------------------Sets up connection with replica servers
+	private void electionProtocol() {
+		System.out.println("-------------------------------");
+		System.out.println("Initializing Election... ");
+		
+		for (ServerConnection SC : m_connectedServers) {
+			SC.sendMessage(new ElectionMessage(m_ID, false));
+		}
+		
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		System.out.println(m_receivedElectionID);
+		
+		if (m_ID < m_receivedElectionID) {
+			System.out.println(m_receivedElectionID);
+			m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
+			m_receivedElectionID = 15;
+		}
+	}
+	
+	//---------------------------------------------------------------------------------Sets up connection with replica servers
 	private void TCPsetup() {
 		SocketAddress serveraddress;
 		InetAddress address = null;
@@ -380,6 +430,14 @@ public class ReplicaServer {
 			e.printStackTrace();
 			return null;
 		}
+	}
+	
+	private ServerConnection getServerConnection(int port) {
+		for (ServerConnection SC : m_connectedServers)
+			if (SC.getPort() == port)
+				return SC;
+		
+		return null;
 	}
 }
 

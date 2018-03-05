@@ -31,9 +31,7 @@ public class FrontEndConnection {
 	}
 
 	public boolean handShake(InetAddress address, int port) {
-		Message message = new NewActiveServerMessage();
-		message.setAddress(address);
-		message.setPort(port);
+		Message message = new NewActiveServerMessage(address, port);
 		sendMessage(message);
 		
 		message = receiveMessage();
@@ -98,6 +96,8 @@ public class FrontEndConnection {
 			System.out.println("(UDP side) sent remove message");
 		else if (message instanceof DisconnectMessage)
 			System.out.println("(UDP side) sent disconnect message");
+		else if (message instanceof NewActiveServerMessage)
+			System.out.println("(UDP side) sent New Active Server message");
 	}
 	public InetAddress getAddress() {
 		return m_address;

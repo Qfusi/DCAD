@@ -6,7 +6,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+import Message.ElectionMessage;
 import Message.Message;
+import Message.NewActiveServerMessage;
 import Message.ServerJoinMessage;
 
 public class ServerConnection {
@@ -41,22 +43,16 @@ public class ServerConnection {
 				
 				outputStream.writeObject(message);
 				
-				System.out.println("(TCP side) sent message to port: " + m_port);
+				System.out.println("(TCP side) Server " + m_id + " -=SENT=- message to port: " + m_port);
 				
 				Thread.sleep(5000);
 			} catch (IOException e) {
 				System.err.println("Server " + m_socket.getPort() + " has disconnected (Exception found in ServerConnection Send method)");
 				
-				//TODO ------------------------------------------ELECTION BULLSHIT
-				
-				
-				
-				//---------------------------------------------
-				
 				reconnect();
 				
 				try {
-					Thread.sleep(10000);
+					Thread.sleep(5000);
 				} catch (InterruptedException e1) {
 					e1.printStackTrace();
 				}
@@ -68,10 +64,23 @@ public class ServerConnection {
 	
 	public void sendMessage(Message message) {
 		try {
+			message.setPort(m_socket.getLocalPort());
+			if (message instanceof ServerJoinMessage)
+				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ServerJoinMessage to server: " + ((ServerJoinMessage)message).getID() + " on port " + message.getPort());
+			else if (message instanceof ServerJoinMessage)
+				((ServerJoinMessage)message).setID(m_id);
+			else if (message instanceof ElectionMessage)
+				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ElectionMessage with ID " + ((ElectionMessage)message).getID() + " to server on port: " + message.getPort());
+			
+			
 			ObjectOutputStream outputStream = new ObjectOutputStream(m_socket.getOutputStream());
 			outputStream.writeObject(message);
 			
-			System.out.println("sent a message");
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

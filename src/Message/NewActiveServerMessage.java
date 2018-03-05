@@ -1,9 +1,12 @@
 package Message;
 
+import java.net.InetAddress;
+
 public class NewActiveServerMessage extends Message{
 	private boolean m_isOkay = false;
-	public NewActiveServerMessage() {
-		
+	public NewActiveServerMessage(InetAddress address, int port) {
+		m_address = address;
+		m_port = port;
 	}
 	@Override
 	public Object getObj() {
