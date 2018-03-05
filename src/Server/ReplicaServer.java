@@ -13,11 +13,11 @@ import Message.DisconnectMessage;
 import Message.DrawMessage;
 import Message.ElectionMessage;
 import Message.ElectionWinnerMessage;
-import Message.JoinMessage;
+import Message.ConnectMessage;
 import Message.Message;
 import Message.NewActiveServerMessage;
 import Message.RemoveMessage;
-import Message.ServerJoinMessage;
+import Message.ServerPingMessage;
 
 public class ReplicaServer {
 	//-------------------General
@@ -62,15 +62,11 @@ public class ReplicaServer {
 			
 			instance.listenForFrontEndMessages();
 			
-			//if (instance.m_FEconnection.handShake(m_address, m_port));
-			//	instance.listenForFrontEndMessages();
 		} catch(NumberFormatException e) {
 			System.err.println("Error: port number must be an integer.");
 			System.exit(-1);
 		}
 	}
-
-	//--------------------------------------------------------------------------------------
 
 	private ReplicaServer() {
 		for (int i = 0; i < 3; i++) {
@@ -94,7 +90,6 @@ public class ReplicaServer {
 			}
 		}
 	}
-	//--------------------------------------------------------------------------------------
 
 	private void listenForFrontEndMessages() {
 		System.out.println("(UDP side) Listening for front end messages... ");
@@ -102,14 +97,14 @@ public class ReplicaServer {
 		while(true) {
 			Message message = m_FEconnection.receiveMessage();
 			
-			if (message instanceof JoinMessage) {
+			if (message instanceof ConnectMessage) {
 				if (addClient(message.getAddress(), message.getPort())) {
-					((JoinMessage) message).setMayJoin(true);
-					((JoinMessage) message).setReply(true);
-					((JoinMessage) message).setList(m_GObjects);
+					((ConnectMessage) message).setMayJoin(true);
+					((ConnectMessage) message).setReply(true);
+					((ConnectMessage) message).setList(m_GObjects);
 				} else {
-					((JoinMessage) message).setMayJoin(false);
-					((JoinMessage) message).setReply(true);
+					((ConnectMessage) message).setMayJoin(false);
+					((ConnectMessage) message).setReply(true);
 				}
 				 
 				
@@ -154,7 +149,7 @@ public class ReplicaServer {
 					e.printStackTrace();
 				}
 				
-				if (message instanceof ServerJoinMessage) {
+				if (message instanceof ServerPingMessage) {
 					m_connectedServers.add(new ServerConnection(this, m_ID, message.getAddress(), message.getPort(), socket));
 					System.out.println("(TCP side) received new connection from: " + message.getPort());
 				}
@@ -179,12 +174,12 @@ public class ReplicaServer {
 			Message message = null;
 			
 			try {
-				//-----------------------------------------------------------------------------RECEIVE
+				//-----------------------------------------------------------------------------RECEIVES
 				ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
 				message = (Message) inputStream.readObject();
 				
-				if (message instanceof ServerJoinMessage)
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ServerJoinMessage from server: " + ((ServerJoinMessage)message).getID() + " on port " + message.getPort());
+				if (message instanceof ServerPingMessage)
+					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ping from server: " + ((ServerPingMessage)message).getID());
 				else if (message instanceof NewActiveServerMessage)
 					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a NewActiveServerMessage from port: " + message.getPort());
 				else if (message instanceof ElectionMessage)
@@ -195,7 +190,7 @@ public class ReplicaServer {
 				
 				
 				
-				//-----------------------------------------------------------------------------REPLY
+				//-----------------------------------------------------------------------------REPLIES
 				
 				ServerConnection temp = getServerConnection(message.getPort());
 				
@@ -211,20 +206,18 @@ public class ReplicaServer {
 					m_receivedElectionID = 15;
 				}
 				
-				//-----------------------------------
+				//------------------------------------------------------------------------------
 			} catch (IOException e) {
 				System.err.println("Server " + socket.getPort() + " has disconnected (Exception found in ReplicaServer receive method)");
 				
-				ServerConnection connectionToRemove = null;
-				for (ServerConnection SC : m_connectedServers) {
-					if (SC.getSocket() == socket)
-						connectionToRemove = SC;
-				}
+				//Remove the disconnected server from the list
+				ServerConnection connectionToRemove = getServerConnection(socket.getPort());
 				m_connectedServers.remove(connectionToRemove);
 				
-				//---------HAVE ELECTION :D -WORKS
 				electionProtocol();
 				
+				// break in order to terminate this listener thread - disconnected server will be accepted again in listenForServerMessages method
+				// and new listener thread will be started again
 				break;
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
@@ -234,28 +227,35 @@ public class ReplicaServer {
 	
 	private void electionProtocol() {
 		System.out.println("-------------------------------");
-		System.out.println("Initializing Election... ");
+		System.out.println("     Initializing Election");
+		System.out.println("-------------------------------");
 		
 		for (ServerConnection SC : m_connectedServers) {
 			SC.sendMessage(new ElectionMessage(m_ID, false));
 		}
 		
 		try {
-			Thread.sleep(1000);
+			Thread.sleep(500);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 		
 		if (m_ID < m_receivedElectionID) {
+			//We won the election -> alert FE	
 			m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
 			m_receivedElectionID = 15;
 		}
 		else {
+			//We didn't win the election -> Alert the servers about who won
 			for (ServerConnection SC : m_connectedServers) {
 				SC.sendMessage(new ElectionWinnerMessage(m_receivedElectionID));
 			}
 			m_receivedElectionID = 15;
 		}
+		
+		System.out.println("-------------------------------");
+		System.out.println("     Election Finished");
+		System.out.println("-------------------------------");
 	}
 	
 	//---------------------------------------------------------------------------------Sets up connection with replica servers
@@ -281,7 +281,7 @@ public class ReplicaServer {
 				e2.printStackTrace();
 			}
 			System.out.println("created TCP recieve socket with port: " + port);
-			System.out.println("--------------------------------------------------");
+			System.out.println("--------------------------------------------------------------");
 			
 			new Thread(new Runnable() {
 				public void run() {
@@ -309,7 +309,7 @@ public class ReplicaServer {
 			
 			System.out.println("created TCP receive socket with port: " + port);
 			System.out.println("created TCP send socket with port: " + port2);
-			System.out.println("--------------------------------------------------");
+			System.out.println("--------------------------------------------------------------");
 			new Thread(new Runnable() {
 				public void run() {
 					listenForNewServerConnections();
@@ -369,7 +369,7 @@ public class ReplicaServer {
 			
 			System.out.println("created TCP send socket with port: " + port);
 			System.out.println("created TCP send socket with port: " + port2);
-			System.out.println("--------------------------------------------------");
+			System.out.println("--------------------------------------------------------------");
 			
 			
 			new Thread(new Runnable() {

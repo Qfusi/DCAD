@@ -9,8 +9,7 @@ import java.net.Socket;
 import Message.ElectionMessage;
 import Message.ElectionWinnerMessage;
 import Message.Message;
-import Message.NewActiveServerMessage;
-import Message.ServerJoinMessage;
+import Message.ServerPingMessage;
 
 public class ServerConnection {
 	private ReplicaServer m_rs;
@@ -40,12 +39,12 @@ public class ServerConnection {
 		while (true) {
 			try {
 				ObjectOutputStream outputStream = new ObjectOutputStream(m_socket.getOutputStream());
-				Message message = new ServerJoinMessage(m_id, false);
+				Message message = new ServerPingMessage(m_id, false);
 				message.setPort(m_socket.getLocalPort());
 				
 				outputStream.writeObject(message);
 				
-				System.out.println("(TCP side) Server " + m_id + " -=SENT=- message to port: " + m_port);
+				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ping to port: " + m_port);
 				
 				Thread.sleep(5000);
 			} catch (IOException e) {
@@ -56,11 +55,6 @@ public class ServerConnection {
 				
 				reconnect();
 				
-				try {
-					Thread.sleep(5000);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -70,10 +64,10 @@ public class ServerConnection {
 	public void sendMessage(Message message) {
 		try {
 			message.setPort(m_socket.getLocalPort());
-			if (message instanceof ServerJoinMessage)
-				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ServerJoinMessage to server: " + ((ServerJoinMessage)message).getID() + " on port " + message.getPort());
-			else if (message instanceof ServerJoinMessage)
-				((ServerJoinMessage)message).setID(m_id);
+			if (message instanceof ServerPingMessage)
+				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ServerJoinMessage to server: " + ((ServerPingMessage)message).getID() + " on port " + message.getPort());
+			else if (message instanceof ServerPingMessage)
+				((ServerPingMessage)message).setID(m_id);
 			else if (message instanceof ElectionMessage)
 				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ElectionMessage with ID " + ((ElectionMessage)message).getID() + " to server on port: " + message.getPort());
 			else if (message instanceof ElectionWinnerMessage)
@@ -93,14 +87,23 @@ public class ServerConnection {
 	}
 	
 	private void reconnect() {
-		m_socket = new Socket();
-		InetSocketAddress serveraddress = new InetSocketAddress(m_address, m_port);
-		try {
-			m_socket.connect(serveraddress);
-			m_disconnectedPort = 0;
-			System.out.println("Reconnected to port: " + m_port);
-		} catch (IOException e1) {
-			System.err.println("Tried to reconnect to port: " + m_port);
+		while (true) {
+			m_socket = new Socket();
+			InetSocketAddress serveraddress = new InetSocketAddress(m_address, m_port);
+			try {
+				m_socket.connect(serveraddress);
+				m_disconnectedPort = 0;
+				System.out.println("Reconnected to port: " + m_port);
+				break;
+			} catch (IOException e1) {
+				System.err.println("Tried to reconnect to port: " + m_port);
+			}
+			
+			try {
+				Thread.sleep(5000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	

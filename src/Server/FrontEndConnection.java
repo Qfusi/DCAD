@@ -7,7 +7,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 
 import Message.DrawMessage;
-import Message.JoinMessage;
+import Message.ConnectMessage;
 import Message.DisconnectMessage;
 import Message.Message;
 import Message.MessageConvertion;
@@ -28,19 +28,6 @@ public class FrontEndConnection {
 		m_address = address;
 		m_port = port;
 		m_socket = socket;
-	}
-
-	public boolean handShake(InetAddress address, int port) {
-		Message message = new NewActiveServerMessage(address, port);
-		sendMessage(message);
-		
-		message = receiveMessage();
-		
-		if (message instanceof JoinMessage) {
-			if (((JoinMessage) message).getMayJoin())
-				return true;
-		}
-		return false;
 	}
 	
 	public Message receiveMessage() {
@@ -63,8 +50,8 @@ public class FrontEndConnection {
 			e.printStackTrace();
 		}
 
-		if (message instanceof JoinMessage)
-			System.out.println("(UDP side) received join message");
+		if (message instanceof ConnectMessage)
+			System.out.println("(UDP side) received connect message");
 		else if (message instanceof DrawMessage)
 			System.out.println("(UDP side) received draw message");
 		else if (message instanceof RemoveMessage)
@@ -88,8 +75,8 @@ public class FrontEndConnection {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		if (message instanceof JoinMessage)
-			System.out.println("(UDP side) sent join message");
+		if (message instanceof ConnectMessage)
+			System.out.println("(UDP side) sent connect message");
 		else if (message instanceof DrawMessage)
 			System.out.println("(UDP side) sent draw message");
 		else if (message instanceof RemoveMessage)

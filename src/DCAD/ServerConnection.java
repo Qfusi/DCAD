@@ -8,7 +8,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import Message.DrawMessage;
-import Message.JoinMessage;
+import Message.ConnectMessage;
 import Message.DisconnectMessage;
 import Message.Message;
 import Message.MessageConvertion;
@@ -34,14 +34,14 @@ public class ServerConnection {
 	}
 
 	public boolean handshake(GUI gui) {
-		Message message = new JoinMessage();
+		Message message = new ConnectMessage();
 		sendMessage(message);
 
 		message = receiveMessage();
 		
-		if (message instanceof JoinMessage) {
-			if (((JoinMessage) message).getMayJoin()) {
-				gui.reDrawEverything(((JoinMessage) message).getList());
+		if (message instanceof ConnectMessage) {
+			if (((ConnectMessage) message).getMayJoin()) {
+				gui.reDrawEverything(((ConnectMessage) message).getList());
 				return true;
 			}
 		}
@@ -68,8 +68,8 @@ public class ServerConnection {
 			e.printStackTrace();
 		}
 
-		if (message instanceof JoinMessage)
-			System.out.println("received join message");
+		if (message instanceof ConnectMessage)
+			System.out.println("received connect message");
 		else if (message instanceof DrawMessage)
 			System.out.println("received draw message");
 		else if (message instanceof RemoveMessage)
@@ -93,8 +93,8 @@ public class ServerConnection {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		if (message instanceof JoinMessage)
-			System.out.println("sent join message");
+		if (message instanceof ConnectMessage)
+			System.out.println("sent connect message");
 		else if (message instanceof DrawMessage)
 			System.out.println("sent draw message");
 		else if (message instanceof RemoveMessage)

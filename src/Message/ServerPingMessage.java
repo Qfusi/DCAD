@@ -1,10 +1,10 @@
 package Message;
 
-public class ServerJoinMessage extends Message{
+public class ServerPingMessage extends Message{
 	private int m_ID;
 	private boolean m_isLeader = false;
 	
-	public ServerJoinMessage(int id, boolean isLeader) {
+	public ServerPingMessage(int id, boolean isLeader) {
 		m_ID = id;
 		m_isLeader = isLeader;
 	}

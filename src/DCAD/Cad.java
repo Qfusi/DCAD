@@ -6,7 +6,7 @@
 package DCAD;
 
 import Message.DrawMessage;
-import Message.JoinMessage;
+import Message.ConnectMessage;
 import Message.DisconnectMessage;
 import Message.Message;
 import Message.RemoveMessage;
@@ -44,8 +44,8 @@ public class Cad {
 		while (true) {
 			Message message = m_connection.receiveMessage();
 			
-			if (message instanceof JoinMessage) {
-				gui.reDrawEverything(((JoinMessage) message).getList());
+			if (message instanceof ConnectMessage) {
+				gui.reDrawEverything(((ConnectMessage) message).getList());
 			} else if (message instanceof DrawMessage) {
 				GObject obj = (GObject) message.getObj();
 				drawObject(obj);

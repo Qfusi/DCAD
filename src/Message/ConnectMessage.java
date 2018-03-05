@@ -3,11 +3,11 @@ package Message;
 import java.util.ArrayList;
 import DCAD.GObject;
 
-public class JoinMessage extends Message{
+public class ConnectMessage extends Message{
 	private ArrayList<GObject> m_GObjects  = new ArrayList<GObject>();
 	private boolean mayJoin = false;
 	private boolean isReply = false;
-	public JoinMessage() {
+	public ConnectMessage() {
 	}
 
 	public boolean getMayJoin() {

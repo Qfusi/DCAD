@@ -15,7 +15,7 @@ import Message.NewActiveServerMessage;
 import Message.RemoveMessage;
 import Message.Message;
 import Message.DrawMessage;
-import Message.JoinMessage;
+import Message.ConnectMessage;
 import Message.DisconnectMessage;
 
 public class FrontEnd {
@@ -86,12 +86,10 @@ public class FrontEnd {
 				e.printStackTrace();
 			}
 			
-			if (message instanceof JoinMessage) {
-				System.out.println("ClientListener received join message of: " + packet.getLength() + " bytes");
-				
+			if (message instanceof ConnectMessage) {
+				System.out.println("ClientListener received connect message of: " + packet.getLength() + " bytes");
 				message.setAddress(packet.getAddress());
 				message.setPort(packet.getPort());
-				
 				sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
 			} else if (message instanceof DrawMessage) {
 				System.out.println("ClientListener received draw message of: " + packet.getLength() + " bytes");	
@@ -140,11 +138,11 @@ public class FrontEnd {
 				clientListener.setServerAddress(message.getAddress());
 				clientListener.setServerPort(message.getPort());
 			}
-			else if (message instanceof JoinMessage) {
-				System.out.println("ServerListener received join message of: " + packet.getLength() + " bytes");
-				if (((JoinMessage) message).isReply()) {
+			else if (message instanceof ConnectMessage) {
+				System.out.println("ServerListener received connect reply message of: " + packet.getLength() + " bytes");
+				if (((ConnectMessage) message).isReply()) {
 					sendMessage(m_clientSocket, message.getAddress(), message.getPort(), message);
-				} else if (!((JoinMessage) message).isReply()) {
+				} else if (!((ConnectMessage) message).isReply()) {
 
 				}
 			} else {
@@ -169,14 +167,14 @@ public class FrontEnd {
 		}
 
 		//THIS BLOCK IS FOR TESTING. REMOVE FOR LIGHTWEIGHT FE-----------------
-		if (message instanceof JoinMessage)
-			System.out.println("Sent join message");
+		if (message instanceof ConnectMessage)
+			System.out.println("Sent connect message to: " + port);
 		else if (message instanceof DrawMessage)
-			System.out.println("Sent draw message");
+			System.out.println("Sent draw message: " + port);
 		else if (message instanceof RemoveMessage)
-			System.out.println("Sent remove message");
+			System.out.println("Sent remove message: " + port);
 		else if (message instanceof DisconnectMessage)
-			System.out.println("Sent leave message");
+			System.out.println("Sent leave message: " + port);
 		//---------------------------------------------------------------------
 	}
 
