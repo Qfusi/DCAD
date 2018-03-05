@@ -7,6 +7,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 
 import Message.ElectionMessage;
+import Message.ElectionWinnerMessage;
 import Message.Message;
 import Message.NewActiveServerMessage;
 import Message.ServerJoinMessage;
@@ -17,6 +18,7 @@ public class ServerConnection {
 	private  InetAddress m_address;
 	private  int m_port;
 	private Socket m_socket;
+	private int m_disconnectedPort;
 
 	
 	public ServerConnection(ReplicaServer rs, int id, InetAddress address, int port, Socket socket) {
@@ -47,7 +49,10 @@ public class ServerConnection {
 				
 				Thread.sleep(5000);
 			} catch (IOException e) {
-				System.err.println("Server " + m_socket.getPort() + " has disconnected (Exception found in ServerConnection Send method)");
+				if (m_disconnectedPort == 0)
+					m_disconnectedPort = m_socket.getPort();
+				
+				System.err.println("Server " + m_disconnectedPort + " has disconnected (Exception found in ServerConnection Send method)");
 				
 				reconnect();
 				
@@ -71,7 +76,8 @@ public class ServerConnection {
 				((ServerJoinMessage)message).setID(m_id);
 			else if (message instanceof ElectionMessage)
 				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ElectionMessage with ID " + ((ElectionMessage)message).getID() + " to server on port: " + message.getPort());
-			
+			else if (message instanceof ElectionWinnerMessage)
+				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ElectionWinnerMessage with ID " + ((ElectionWinnerMessage)message).getID() + " to server on port: " + message.getPort());
 			
 			ObjectOutputStream outputStream = new ObjectOutputStream(m_socket.getOutputStream());
 			outputStream.writeObject(message);
@@ -91,8 +97,10 @@ public class ServerConnection {
 		InetSocketAddress serveraddress = new InetSocketAddress(m_address, m_port);
 		try {
 			m_socket.connect(serveraddress);
+			m_disconnectedPort = 0;
+			System.out.println("Reconnected to port: " + m_port);
 		} catch (IOException e1) {
-			System.err.println("Tried to reconnect");
+			System.err.println("Tried to reconnect to port: " + m_port);
 		}
 	}
 	

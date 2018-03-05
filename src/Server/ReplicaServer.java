@@ -12,6 +12,7 @@ import DCAD.GObject;
 import Message.DisconnectMessage;
 import Message.DrawMessage;
 import Message.ElectionMessage;
+import Message.ElectionWinnerMessage;
 import Message.JoinMessage;
 import Message.Message;
 import Message.NewActiveServerMessage;
@@ -50,8 +51,19 @@ public class ReplicaServer {
 		try {
 			ReplicaServer instance = new ReplicaServer();
 			
-			if (instance.m_FEconnection.handShake(m_address, m_port));
-				instance.listenForFrontEndMessages();
+			try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			
+			if (instance.getID() == 2)
+				instance.electionProtocol();
+			
+			instance.listenForFrontEndMessages();
+			
+			//if (instance.m_FEconnection.handShake(m_address, m_port));
+			//	instance.listenForFrontEndMessages();
 		} catch(NumberFormatException e) {
 			System.err.println("Error: port number must be an integer.");
 			System.exit(-1);
@@ -177,6 +189,8 @@ public class ReplicaServer {
 					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a NewActiveServerMessage from port: " + message.getPort());
 				else if (message instanceof ElectionMessage)
 					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionMessage from port: " + message.getPort() + " with ID: " + ((ElectionMessage)message).getID());
+				else if (message instanceof ElectionWinnerMessage)
+					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionWinnerMessage from port: " + message.getPort() + " with ID: " + ((ElectionWinnerMessage)message).getID());
 				
 				
 				
@@ -189,12 +203,13 @@ public class ReplicaServer {
 					//check if message is not a reply and if server ID is smaller than received one - reply with own ID if that is the case
 					if (!((ElectionMessage)message).isReply() && m_ID < ((ElectionMessage)message).getID())
 						temp.sendMessage(new ElectionMessage(m_ID, true));
-					else {
-						System.out.println("hej");
+					else if (m_receivedElectionID > ((ElectionMessage)message).getID()){
 						m_receivedElectionID = ((ElectionMessage) message).getID();
 					}
+				} else if (message instanceof ElectionWinnerMessage && ((ElectionWinnerMessage)message).getID() == m_ID) {
+					m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
+					m_receivedElectionID = 15;
 				}
-				
 				
 				//-----------------------------------
 			} catch (IOException e) {
@@ -231,11 +246,14 @@ public class ReplicaServer {
 			e.printStackTrace();
 		}
 		
-		System.out.println(m_receivedElectionID);
-		
 		if (m_ID < m_receivedElectionID) {
-			System.out.println(m_receivedElectionID);
 			m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
+			m_receivedElectionID = 15;
+		}
+		else {
+			for (ServerConnection SC : m_connectedServers) {
+				SC.sendMessage(new ElectionWinnerMessage(m_receivedElectionID));
+			}
 			m_receivedElectionID = 15;
 		}
 	}
@@ -438,6 +456,10 @@ public class ReplicaServer {
 				return SC;
 		
 		return null;
+	}
+	
+	private int getID() {
+		return m_ID;
 	}
 }
 
