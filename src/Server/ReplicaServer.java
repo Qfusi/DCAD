@@ -18,6 +18,7 @@ import Message.Message;
 import Message.NewActiveServerMessage;
 import Message.RemoveMessage;
 import Message.ServerPingMessage;
+import Message.UpdateMessage;
 
 public class ReplicaServer {
 	//-------------------General
@@ -102,34 +103,28 @@ public class ReplicaServer {
 					((ConnectMessage) message).setMayJoin(true);
 					((ConnectMessage) message).setReply(true);
 					((ConnectMessage) message).setList(m_GObjects);
+				
+					m_FEconnection.sendMessage(message);
+					broadcastToServers(message);
 				} else {
 					((ConnectMessage) message).setMayJoin(false);
 					((ConnectMessage) message).setReply(true);
+					
+					m_FEconnection.sendMessage(message);
 				}
-				 
-				
-				m_FEconnection.sendMessage(message);
 			} else if (message instanceof DrawMessage) {
 				m_GObjects.add((GObject) message.getObj());
-				for (ClientConnection cc : m_connectedClients) {
-					message.setAddress(cc.getAddress());
-					message.setPort(cc.getPort());
-					m_FEconnection.sendMessage(message);
-				}
+				
+				broadcastToClients(message);
+				broadcastToServers(new UpdateMessage(m_GObjects));
 			} else if (message instanceof RemoveMessage) {
 				m_GObjects.remove(m_GObjects.size() - 1);
-				for (ClientConnection cc : m_connectedClients) {
-					message.setAddress(cc.getAddress());
-					message.setPort(cc.getPort());
-					m_FEconnection.sendMessage(message);
-				}
+				
+				broadcastToClients(message);
+				broadcastToServers(new UpdateMessage(m_GObjects));
 			} else if (message instanceof DisconnectMessage) {
-				ClientConnection toBeRemoved = null;
-				for (ClientConnection cc : m_connectedClients) {
-					if (cc.getPort() == message.getPort())
-						toBeRemoved = cc;
-				}
-				m_connectedClients.remove(toBeRemoved);
+				removeClient(message.getPort());
+				broadcastToServers(message);
 			}
 		}
 	}
@@ -149,10 +144,8 @@ public class ReplicaServer {
 					e.printStackTrace();
 				}
 				
-				if (message instanceof ServerPingMessage) {
-					m_connectedServers.add(new ServerConnection(this, m_ID, message.getAddress(), message.getPort(), socket));
-					System.out.println("(TCP side) received new connection from: " + message.getPort());
-				}
+				m_connectedServers.add(new ServerConnection(this, m_ID, message.getAddress(), message.getPort(), socket));
+				System.out.println("(TCP side) received new connection from: " + message.getPort());
 				
 				new Thread(new Runnable() {
 					public void run() {
@@ -171,42 +164,48 @@ public class ReplicaServer {
 		System.out.println("--------------------------------------------------------------");
 		
 		while (true) {
-			Message message = null;
-			
 			try {
-				//-----------------------------------------------------------------------------RECEIVES
+				Message message = null;
 				ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
 				message = (Message) inputStream.readObject();
 				
-				if (message instanceof ServerPingMessage)
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ping from server: " + ((ServerPingMessage)message).getID());
-				else if (message instanceof NewActiveServerMessage)
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a NewActiveServerMessage from port: " + message.getPort());
-				else if (message instanceof ElectionMessage)
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionMessage from port: " + message.getPort() + " with ID: " + ((ElectionMessage)message).getID());
-				else if (message instanceof ElectionWinnerMessage)
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionWinnerMessage from port: " + message.getPort() + " with ID: " + ((ElectionWinnerMessage)message).getID());
-				
-				
-				
-				
-				//-----------------------------------------------------------------------------REPLIES
-				
 				ServerConnection temp = getServerConnection(message.getPort());
 				
-				if (message instanceof ElectionMessage) {
+				if (message instanceof ServerPingMessage) {
+					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ping from server: " + ((ServerPingMessage)message).getID());
+				}
+				else if (message instanceof ElectionMessage) {
+					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionMessage from port: " + message.getPort() + " with ID: " + ((ElectionMessage)message).getID());
+					
 					//check if message is not a reply and if server ID is smaller than received one - reply with own ID if that is the case
 					if (!((ElectionMessage)message).isReply() && m_ID < ((ElectionMessage)message).getID())
 						temp.sendMessage(new ElectionMessage(m_ID, true));
 					else if (m_receivedElectionID > ((ElectionMessage)message).getID()){
 						m_receivedElectionID = ((ElectionMessage) message).getID();
 					}
-				} else if (message instanceof ElectionWinnerMessage && ((ElectionWinnerMessage)message).getID() == m_ID) {
-					m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
-					m_receivedElectionID = 15;
+				}
+				else if (message instanceof ElectionWinnerMessage) {
+					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionWinnerMessage from port: " + message.getPort());
+					
+					if (((ElectionWinnerMessage)message).getID() == m_ID) {
+						m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
+						m_receivedElectionID = 15;
+					}
+				}
+				else if (message instanceof UpdateMessage) {
+					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- UpdateMessage");
+					m_GObjects = ((UpdateMessage) message).getList();
+				}
+				else if (message instanceof ConnectMessage) {
+					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- ConnectMessage");
+					addClient(message.getAddress(), message.getPort());
+				}
+				else if (message instanceof DisconnectMessage) {
+					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- DisconnectMessage");
+					removeClient(message.getPort());
 				}
 				
-				//------------------------------------------------------------------------------
+				//------------------------------------------------------------------------------SERVER DISCONNECTS
 			} catch (IOException e) {
 				System.err.println("Server " + socket.getPort() + " has disconnected (Exception found in ReplicaServer receive method)");
 				
@@ -230,9 +229,7 @@ public class ReplicaServer {
 		System.out.println("     Initializing Election");
 		System.out.println("-------------------------------");
 		
-		for (ServerConnection SC : m_connectedServers) {
-			SC.sendMessage(new ElectionMessage(m_ID, false));
-		}
+		broadcastToServers(new ElectionMessage(m_ID, false));
 		
 		try {
 			Thread.sleep(500);
@@ -247,9 +244,7 @@ public class ReplicaServer {
 		}
 		else {
 			//We didn't win the election -> Alert the servers about who won
-			for (ServerConnection SC : m_connectedServers) {
-				SC.sendMessage(new ElectionWinnerMessage(m_receivedElectionID));
-			}
+			broadcastToServers(new ElectionWinnerMessage(m_receivedElectionID));
 			m_receivedElectionID = 15;
 		}
 		
@@ -398,7 +393,6 @@ public class ReplicaServer {
 		m_FEconnection = new FrontEndConnection(m_feAddress, m_fePort, m_FEsocket);
 	}
 	
-	//WORKS
 	private boolean addClient(InetAddress address, int port) {
 		for (ClientConnection c : m_connectedClients) {
 			if (c.getAddress() == address && c.getPort() == port) {
@@ -411,7 +405,15 @@ public class ReplicaServer {
 		return true;
 	}
 	
-	//WORKS
+	private void removeClient(int port) {
+		ClientConnection toBeRemoved = null;
+		for (ClientConnection cc : m_connectedClients) {
+			if (cc.getPort() == port)
+				toBeRemoved = cc;
+		}
+		m_connectedClients.remove(toBeRemoved);
+	}
+	
 	private static int readPortFromFile(int row, int collumn, FileReader file) {
 		Scanner m_s = null;
 		ArrayList<String> list = new ArrayList<String>();
@@ -428,7 +430,6 @@ public class ReplicaServer {
 		return i;
 	}
 	
-	//WORKS
 	private static InetAddress readAddressFromFile(int row, FileReader file) {
 		Scanner m_s = null;
 		ArrayList<String> list = new ArrayList<String>();
@@ -458,8 +459,27 @@ public class ReplicaServer {
 		return null;
 	}
 	
+	private void broadcastToServers(Message message) {
+		for (ServerConnection SC : m_connectedServers)
+			SC.sendMessage(message);
+	}
+	
+	private void broadcastToClients(Message message) {
+		for (ClientConnection cc : m_connectedClients) {
+			message.setAddress(cc.getAddress());
+			message.setPort(cc.getPort());
+			System.out.println(cc.getPort());
+			m_FEconnection.sendMessage(message);
+		}
+	}
+	
 	private int getID() {
 		return m_ID;
 	}
+	
+	public void addServerConnection(ServerConnection sc) {
+		m_connectedServers.add(sc);
+	}
 }
+
 

@@ -51,13 +51,13 @@ public class FrontEndConnection {
 		}
 
 		if (message instanceof ConnectMessage)
-			System.out.println("(UDP side) received connect message");
+			System.out.println("(UDP side) -=RECEIVED=- connect message");
 		else if (message instanceof DrawMessage)
-			System.out.println("(UDP side) received draw message");
+			System.out.println("(UDP side) -=RECEIVED=- draw message");
 		else if (message instanceof RemoveMessage)
-			System.out.println("(UDP side) received remove message");
+			System.out.println("(UDP side) -=RECEIVED=- remove message");
 		else if (message instanceof DisconnectMessage)
-			System.out.println("(UDP side) received disconnect message");
+			System.out.println("(UDP side) -=RECEIVED=- disconnect message");
 
 		return message;
 	}
@@ -76,15 +76,15 @@ public class FrontEndConnection {
 			e.printStackTrace();
 		}
 		if (message instanceof ConnectMessage)
-			System.out.println("(UDP side) sent connect message");
+			System.out.println("(UDP side) -=SENT=- connect message");
 		else if (message instanceof DrawMessage)
-			System.out.println("(UDP side) sent draw message");
+			System.out.println("(UDP side) -=SENT=- draw message");
 		else if (message instanceof RemoveMessage)
-			System.out.println("(UDP side) sent remove message");
+			System.out.println("(UDP side) -=SENT=- remove message");
 		else if (message instanceof DisconnectMessage)
-			System.out.println("(UDP side) sent disconnect message");
+			System.out.println("(UDP side) -=SENT=- disconnect message");
 		else if (message instanceof NewActiveServerMessage)
-			System.out.println("(UDP side) sent New Active Server message");
+			System.out.println("(UDP side) -=SENT=- New Active Server message");
 	}
 	public InetAddress getAddress() {
 		return m_address;

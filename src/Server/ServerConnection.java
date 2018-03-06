@@ -6,6 +6,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+import Message.ConnectMessage;
 import Message.ElectionMessage;
 import Message.ElectionWinnerMessage;
 import Message.Message;
@@ -30,12 +31,7 @@ public class ServerConnection {
 	
 	//----------------------------------------------Constantly tries to connect to specified server
 	public void connectToServer() {
-		new Thread(new Runnable() {
-			public void run() {
-				m_rs.listenForServerMessages(m_socket);
-			}
-		}).start();
-		
+		startListenerThread();
 		while (true) {
 			try {
 				ObjectOutputStream outputStream = new ObjectOutputStream(m_socket.getOutputStream());
@@ -63,24 +59,30 @@ public class ServerConnection {
 	
 	public void sendMessage(Message message) {
 		try {
-			message.setPort(m_socket.getLocalPort());
-			if (message instanceof ServerPingMessage)
-				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ServerJoinMessage to server: " + ((ServerPingMessage)message).getID() + " on port " + message.getPort());
-			else if (message instanceof ServerPingMessage)
+			
+			if (message instanceof ServerPingMessage) {
+				message.setPort(m_socket.getLocalPort());
+				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ServerPingMessage to server: " + ((ServerPingMessage)message).getID() + " on port " + m_socket.getPort());
+			}
+			else if (message instanceof ServerPingMessage) {
+				message.setPort(m_socket.getLocalPort());
 				((ServerPingMessage)message).setID(m_id);
-			else if (message instanceof ElectionMessage)
-				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ElectionMessage with ID " + ((ElectionMessage)message).getID() + " to server on port: " + message.getPort());
-			else if (message instanceof ElectionWinnerMessage)
-				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ElectionWinnerMessage with ID " + ((ElectionWinnerMessage)message).getID() + " to server on port: " + message.getPort());
+			}
+			else if (message instanceof ElectionMessage) {
+				message.setPort(m_socket.getLocalPort());
+				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ElectionMessage with ID " + ((ElectionMessage)message).getID() + " to server on port: " + m_socket.getPort());
+			}
+			else if (message instanceof ElectionWinnerMessage) {
+				message.setPort(m_socket.getLocalPort());
+				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ElectionWinnerMessage with ID " + ((ElectionWinnerMessage)message).getID() + " to server on port: " + m_socket.getPort());
+			}
+			else if (message instanceof ConnectMessage) {
+				
+			}
 			
 			ObjectOutputStream outputStream = new ObjectOutputStream(m_socket.getOutputStream());
 			outputStream.writeObject(message);
 			
-			try {
-				Thread.sleep(10000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -88,23 +90,35 @@ public class ServerConnection {
 	
 	private void reconnect() {
 		while (true) {
-			m_socket = new Socket();
-			InetSocketAddress serveraddress = new InetSocketAddress(m_address, m_port);
-			try {
-				m_socket.connect(serveraddress);
-				m_disconnectedPort = 0;
-				System.out.println("Reconnected to port: " + m_port);
-				break;
-			} catch (IOException e1) {
-				System.err.println("Tried to reconnect to port: " + m_port);
-			}
-			
 			try {
 				Thread.sleep(5000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+			
+			m_socket = new Socket();
+			InetSocketAddress serveraddress = new InetSocketAddress(m_address, m_port);
+			try {
+				m_socket.connect(serveraddress);
+				m_disconnectedPort = 0;
+				
+				m_rs.addServerConnection(this);
+				startListenerThread();
+				
+				System.out.println("Reconnected to port: " + m_port);
+				break;
+			} catch (IOException e1) {
+				System.err.println("Tried to reconnect to port: " + m_port);
+			}
 		}
+	}
+	
+	private void startListenerThread() {
+		new Thread(new Runnable() {
+			public void run() {
+				m_rs.listenForServerMessages(m_socket);
+			}
+		}).start();
 	}
 	
 	public Socket getSocket() {

@@ -127,7 +127,7 @@ public class FrontEnd {
 			}
 			
 			if (message instanceof NewActiveServerMessage) {
-				System.out.println("ServerListener received NewActiveServer message of: " + packet.getLength() + " bytes");
+				System.out.println("ServerListener received NewActiveServer message");
 				System.out.println("-----------------------------------");
 				System.out.println("New active Server with port: " + message.getPort());
 				System.out.println("-----------------------------------");
@@ -170,11 +170,11 @@ public class FrontEnd {
 		if (message instanceof ConnectMessage)
 			System.out.println("Sent connect message to: " + port);
 		else if (message instanceof DrawMessage)
-			System.out.println("Sent draw message: " + port);
+			System.out.println("Sent draw message to: " + port);
 		else if (message instanceof RemoveMessage)
-			System.out.println("Sent remove message: " + port);
+			System.out.println("Sent remove message to: " + port);
 		else if (message instanceof DisconnectMessage)
-			System.out.println("Sent leave message: " + port);
+			System.out.println("Sent leave message to: " + port);
 		//---------------------------------------------------------------------
 	}
 
