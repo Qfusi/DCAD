@@ -33,24 +33,14 @@ public class ServerConnection {
 	public void connectToServer() {
 		startListenerThread();
 		while (true) {
+			Message message = new ServerPingMessage(m_id, false);
+			
+			sendMessage(message);
+			
+			System.out.println("(TCP side) Server " + m_id + " -=SENT=- ping to port: " + m_port);
+			
 			try {
-				ObjectOutputStream outputStream = new ObjectOutputStream(m_socket.getOutputStream());
-				Message message = new ServerPingMessage(m_id, false);
-				message.setPort(m_socket.getLocalPort());
-				
-				outputStream.writeObject(message);
-				
-				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ping to port: " + m_port);
-				
-				Thread.sleep(10000);
-			} catch (IOException e) {
-				if (m_disconnectedPort == 0)
-					m_disconnectedPort = m_socket.getPort();
-				
-				System.err.println("Server " + m_disconnectedPort + " has disconnected (Exception found in ServerConnection Send method)");
-				
-				reconnect();
-				
+				Thread.sleep(5000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -62,7 +52,6 @@ public class ServerConnection {
 			
 			if (message instanceof ServerPingMessage) {
 				message.setPort(m_socket.getLocalPort());
-				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ServerPingMessage to server: " + ((ServerPingMessage)message).getID() + " on port " + m_socket.getPort());
 			}
 			else if (message instanceof ServerPingMessage) {
 				message.setPort(m_socket.getLocalPort());
@@ -84,7 +73,12 @@ public class ServerConnection {
 			outputStream.writeObject(message);
 			
 		} catch (IOException e) {
-			e.printStackTrace();
+			if (m_disconnectedPort == 0)
+				m_disconnectedPort = m_socket.getPort();
+			
+			System.err.println("Server " + m_disconnectedPort + " has disconnected (Exception found in ServerConnection Send method)");
+			
+			reconnect();
 		}
 	}
 	
