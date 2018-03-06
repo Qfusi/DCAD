@@ -213,8 +213,6 @@ public class ReplicaServer {
 				ServerConnection connectionToRemove = getServerConnection(socket.getPort());
 				m_connectedServers.remove(connectionToRemove);
 				
-				e.printStackTrace();
-				
 				electionProtocol();
 				
 				// break in order to terminate this listener thread - disconnected server will be accepted again in listenForServerMessages method
@@ -482,6 +480,7 @@ public class ReplicaServer {
 	public void addServerConnection(ServerConnection sc) {
 		m_connectedServers.add(sc);
 	}
+
 }
 
 

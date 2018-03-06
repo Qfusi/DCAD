@@ -65,18 +65,17 @@ public class ServerConnection {
 				message.setPort(m_socket.getLocalPort());
 				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ElectionWinnerMessage with ID " + ((ElectionWinnerMessage)message).getID() + " to server on port: " + m_socket.getPort());
 			}
-			else if (message instanceof ConnectMessage) {
-				
-			}
+			else if (message instanceof ConnectMessage) {}
 			
 			ObjectOutputStream outputStream = new ObjectOutputStream(m_socket.getOutputStream());
+			outputStream.flush();
 			outputStream.writeObject(message);
 			
 		} catch (IOException e) {
 			if (m_disconnectedPort == 0)
 				m_disconnectedPort = m_socket.getPort();
 			
-			System.err.println("Server " + m_disconnectedPort + " has disconnected (Exception found in ServerConnection Send method)");
+			System.err.println("Server " + m_disconnectedPort + " has disconnected (Exception found in ServerConnection sendMessage method)");
 			
 			reconnect();
 		}
@@ -110,8 +109,8 @@ public class ServerConnection {
 	private void startListenerThread() {
 		new Thread(new Runnable() {
 			public void run() {
+				System.out.println(m_id + " " + m_socket.getPort());
 				m_rs.listenForServerMessages(m_socket);
-				System.out.println("out of listener");
 			}
 		}).start();
 	}
