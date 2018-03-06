@@ -42,7 +42,7 @@ public class ServerConnection {
 				
 				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ping to port: " + m_port);
 				
-				Thread.sleep(5000);
+				Thread.sleep(10000);
 			} catch (IOException e) {
 				if (m_disconnectedPort == 0)
 					m_disconnectedPort = m_socket.getPort();
@@ -117,6 +117,7 @@ public class ServerConnection {
 		new Thread(new Runnable() {
 			public void run() {
 				m_rs.listenForServerMessages(m_socket);
+				System.out.println("out of listener");
 			}
 		}).start();
 	}

@@ -140,6 +140,7 @@ public class ReplicaServer {
 				try {
 					ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
 					message = (Message) inputStream.readObject();
+					
 				} catch (ClassNotFoundException e) {
 					e.printStackTrace();
 				}
@@ -162,7 +163,6 @@ public class ReplicaServer {
 	public void listenForServerMessages(Socket socket) {
 		System.out.println("(TCP side) Listening for server messages from socket: " + socket.getPort() + "...");
 		System.out.println("--------------------------------------------------------------");
-		
 		while (true) {
 			try {
 				Message message = null;
@@ -212,6 +212,8 @@ public class ReplicaServer {
 				//Remove the disconnected server from the list
 				ServerConnection connectionToRemove = getServerConnection(socket.getPort());
 				m_connectedServers.remove(connectionToRemove);
+				
+				e.printStackTrace();
 				
 				electionProtocol();
 				
