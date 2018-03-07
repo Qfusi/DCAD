@@ -53,7 +53,7 @@ public class ReplicaServer {
 			ReplicaServer instance = new ReplicaServer();
 			
 			try {
-				Thread.sleep(2000);
+				Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -169,23 +169,25 @@ public class ReplicaServer {
 				ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
 				message = (Message) inputStream.readObject();
 				
-				ServerConnection temp = getServerConnection(message.getPort());
+				ServerConnection sc = getServerConnection(message.getPort());
 				
 				if (message instanceof ServerPingMessage) {
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ping from server: " + ((ServerPingMessage)message).getID());
+					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ping from server: " + socket.getPort());
+					if (!((ServerPingMessage) message).isLeader())
+						sc.sendMessage(new ServerPingMessage(m_ID, true));
 				}
 				else if (message instanceof ElectionMessage) {
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionMessage from port: " + message.getPort() + " with ID: " + ((ElectionMessage)message).getID());
+					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionMessage from port: " + socket.getPort() + " with ID: " + ((ElectionMessage)message).getID());
 					
 					//check if message is not a reply and if server ID is smaller than received one - reply with own ID if that is the case
 					if (!((ElectionMessage)message).isReply() && m_ID < ((ElectionMessage)message).getID())
-						temp.sendMessage(new ElectionMessage(m_ID, true));
+						sc.sendMessage(new ElectionMessage(m_ID, true));
 					else if (m_receivedElectionID > ((ElectionMessage)message).getID()){
 						m_receivedElectionID = ((ElectionMessage) message).getID();
 					}
 				}
 				else if (message instanceof ElectionWinnerMessage) {
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionWinnerMessage from port: " + message.getPort());
+					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionWinnerMessage from port: " + socket.getPort());
 					
 					if (((ElectionWinnerMessage)message).getID() == m_ID) {
 						m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
@@ -208,7 +210,9 @@ public class ReplicaServer {
 				//------------------------------------------------------------------------------SERVER DISCONNECTS
 			} catch (IOException e) {
 				System.err.println("Server " + socket.getPort() + " has disconnected (Exception found in ReplicaServer receive method)");
+				
 				e.printStackTrace();
+				
 				//Remove the disconnected server from the list
 				ServerConnection connectionToRemove = getServerConnection(socket.getPort());
 				m_connectedServers.remove(connectionToRemove);
@@ -340,15 +344,15 @@ public class ReplicaServer {
 			}
 			//--------------------------------------------Client socket 1
 			
-			m_Csocket = new Socket();
+			Socket m_Csocket2 = new Socket();
 			serveraddress = new InetSocketAddress(address, port);
 			try {
-				m_Csocket.connect(serveraddress);
+				m_Csocket2.connect(serveraddress);
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
 			
-			m_connectedServers.add(new ServerConnection(this, m_ID, address, port, m_Csocket));
+			m_connectedServers.add(new ServerConnection(this, m_ID, address, port, m_Csocket2));
 			
 			//---------------------------------------------Client socket 2
 			
@@ -480,7 +484,6 @@ public class ReplicaServer {
 	public void addServerConnection(ServerConnection sc) {
 		m_connectedServers.add(sc);
 	}
-
 }
 
 
