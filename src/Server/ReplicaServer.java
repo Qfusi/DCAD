@@ -344,15 +344,15 @@ public class ReplicaServer {
 			}
 			//--------------------------------------------Client socket 1
 			
-			Socket m_Csocket2 = new Socket();
+			m_Csocket = new Socket();
 			serveraddress = new InetSocketAddress(address, port);
 			try {
-				m_Csocket2.connect(serveraddress);
+				m_Csocket.connect(serveraddress);
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
 			
-			m_connectedServers.add(new ServerConnection(this, m_ID, address, port, m_Csocket2));
+			m_connectedServers.add(new ServerConnection(this, m_ID, address, port, m_Csocket));
 			
 			//---------------------------------------------Client socket 2
 			

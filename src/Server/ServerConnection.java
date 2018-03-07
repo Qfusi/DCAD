@@ -95,11 +95,14 @@ public class ServerConnection {
 				m_disconnectedPort = 0;
 				
 				m_rs.addServerConnection(this);
+				
+				Thread.sleep(1000);
+				
 				startListenerThread();
 				
 				System.out.println("Reconnected to port: " + m_port);
 				break;
-			} catch (IOException e1) {
+			} catch (IOException | InterruptedException e1) {
 				System.err.println("Tried to reconnect to port: " + m_port);
 			}
 		}
