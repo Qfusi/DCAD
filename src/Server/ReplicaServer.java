@@ -208,7 +208,7 @@ public class ReplicaServer {
 				//------------------------------------------------------------------------------SERVER DISCONNECTS
 			} catch (IOException e) {
 				System.err.println("Server " + socket.getPort() + " has disconnected (Exception found in ReplicaServer receive method)");
-				
+				e.printStackTrace();
 				//Remove the disconnected server from the list
 				ServerConnection connectionToRemove = getServerConnection(socket.getPort());
 				m_connectedServers.remove(connectionToRemove);

@@ -2,6 +2,7 @@ package Server;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -19,7 +20,7 @@ public class ServerConnection {
 	private  int m_port;
 	private Socket m_socket;
 	private int m_disconnectedPort;
-
+	ObjectOutputStream outputStream;
 	
 	public ServerConnection(ReplicaServer rs, int id, InetAddress address, int port, Socket socket) {
 		m_rs = rs;
@@ -40,7 +41,7 @@ public class ServerConnection {
 			System.out.println("(TCP side) Server " + m_id + " -=SENT=- ping to port: " + m_port);
 			
 			try {
-				Thread.sleep(5000);
+				Thread.sleep(10000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -49,7 +50,6 @@ public class ServerConnection {
 	
 	public void sendMessage(Message message) {
 		try {
-			
 			if (message instanceof ServerPingMessage) {
 				message.setPort(m_socket.getLocalPort());
 			}
@@ -67,9 +67,10 @@ public class ServerConnection {
 			}
 			else if (message instanceof ConnectMessage) {}
 			
-			ObjectOutputStream outputStream = new ObjectOutputStream(m_socket.getOutputStream());
-			outputStream.flush();
+			outputStream = new ObjectOutputStream(m_socket.getOutputStream());
 			outputStream.writeObject(message);
+			
+			System.out.println("to: " + m_socket.getPort());
 			
 		} catch (IOException e) {
 			if (m_disconnectedPort == 0)
@@ -89,10 +90,11 @@ public class ServerConnection {
 				e.printStackTrace();
 			}
 			
-			m_socket = new Socket();
-			InetSocketAddress serveraddress = new InetSocketAddress(m_address, m_port);
 			try {
+				m_socket = new Socket();
+				InetSocketAddress serveraddress = new InetSocketAddress(m_address, m_port);
 				m_socket.connect(serveraddress);
+				
 				m_disconnectedPort = 0;
 				
 				m_rs.addServerConnection(this);
@@ -109,7 +111,6 @@ public class ServerConnection {
 	private void startListenerThread() {
 		new Thread(new Runnable() {
 			public void run() {
-				System.out.println(m_id + " " + m_socket.getPort());
 				m_rs.listenForServerMessages(m_socket);
 			}
 		}).start();
