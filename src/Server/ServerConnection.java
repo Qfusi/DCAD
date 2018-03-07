@@ -38,7 +38,7 @@ public class ServerConnection {
 			sendMessage(message);
 			
 			try {
-				Thread.sleep(10000);
+				Thread.sleep(1500);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -94,15 +94,14 @@ public class ServerConnection {
 				
 				m_disconnectedPort = 0;
 				
+				
+				
 				m_rs.addServerConnection(this);
-				
-				Thread.sleep(1000);
-				
 				startListenerThread();
 				
 				System.out.println("Reconnected to port: " + m_port);
 				break;
-			} catch (IOException | InterruptedException e1) {
+			} catch (IOException e1) {
 				System.err.println("Tried to reconnect to port: " + m_port);
 			}
 		}
