@@ -31,7 +31,7 @@ public class ServerConnection {
 	
 	//----------------------------------------------Constantly tries to connect to specified server
 	public void connectToServer() {
-		startListenerThread();
+		startListenerThread(m_socket);
 		while (true) {
 			Message message = new ServerPingMessage(m_id, false);
 			
@@ -99,7 +99,7 @@ public class ServerConnection {
 				
 				m_rs.addServerConnection(new ServerConnection(m_rs, m_id, m_address, m_port, socket));
 				
-				startListenerThread();
+				startListenerThread(socket);
 				
 				this.m_socket = socket;
 				
@@ -112,10 +112,10 @@ public class ServerConnection {
 		}
 	}
 	
-	private void startListenerThread() {
+	private void startListenerThread(final Socket socket) {
 		new Thread(new Runnable() {
 			public void run() {
-				m_rs.listenForServerMessages(m_socket);
+				m_rs.listenForServerMessages(socket);
 			}
 		}).start();
 	}
