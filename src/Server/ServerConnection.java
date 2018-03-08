@@ -35,21 +35,20 @@ public class ServerConnection {
 		while (true) {
 			Message message = new ServerPingMessage(m_id, false);
 			
-			sendMessage(message);
+			sendMessage(message, false);
 			
 			try {
-				Thread.sleep(1500);
+				Thread.sleep(7500);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
 	}
 	
-	public void sendMessage(Message message) {
+	public void sendMessage(Message message, boolean fromRS) {
 		try {
 			if (message instanceof ServerPingMessage) {
 				message.setPort(m_socket.getLocalPort());
-				System.out.println(m_socket.getLocalPort());
 				System.out.println("(TCP side) Server " + m_id + " -=SENT=- ping to port: " + m_port);
 			}
 			else if (message instanceof ServerPingMessage) {
@@ -70,12 +69,15 @@ public class ServerConnection {
 			outputStream.writeObject(message);
 			
 		} catch (IOException e) {
-			if (m_disconnectedPort == 0)
-				m_disconnectedPort = m_socket.getPort();
-			
-			System.err.println("Server " + m_disconnectedPort + " has disconnected (Exception found in ServerConnection sendMessage method)");
-			
-			reconnect();
+			if (!fromRS)
+			{
+				if (m_disconnectedPort == 0)
+					m_disconnectedPort = m_socket.getPort();
+				
+				System.err.println("Server " + m_disconnectedPort + " has disconnected (Exception found in ServerConnection sendMessage method)");
+				
+				reconnect();
+			}
 		}
 	}
 	
@@ -88,21 +90,24 @@ public class ServerConnection {
 			}
 			
 			try {
-				m_socket = new Socket();
+				
+				Socket socket = new Socket();
 				InetSocketAddress serveraddress = new InetSocketAddress(m_address, m_port);
-				m_socket.connect(serveraddress);
+				socket.connect(serveraddress);
 				
 				m_disconnectedPort = 0;
 				
+				m_rs.addServerConnection(new ServerConnection(m_rs, m_id, m_address, m_port, socket));
 				
-				
-				m_rs.addServerConnection(this);
 				startListenerThread();
+				
+				this.m_socket = socket;
 				
 				System.out.println("Reconnected to port: " + m_port);
 				break;
 			} catch (IOException e1) {
 				System.err.println("Tried to reconnect to port: " + m_port);
+				e1.printStackTrace();
 			}
 		}
 	}

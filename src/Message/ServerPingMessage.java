@@ -2,11 +2,11 @@ package Message;
 
 public class ServerPingMessage extends Message{
 	private int m_ID;
-	private boolean m_isLeader = false;
+	private boolean m_isReply = false;
 	
-	public ServerPingMessage(int id, boolean isLeader) {
+	public ServerPingMessage(int id, boolean isReply) {
 		m_ID = id;
-		m_isLeader = isLeader;
+		m_isReply = isReply;
 	}
 
 	public int getID() {
@@ -17,12 +17,12 @@ public class ServerPingMessage extends Message{
 		this.m_ID = m_ID;
 	}
 
-	public boolean isLeader() {
-		return m_isLeader;
+	public boolean isReply() {
+		return m_isReply;
 	}
 
-	public void setLeader(boolean isLeader) {
-		this.m_isLeader = isLeader;
+	public void setReply(boolean isLeader) {
+		this.m_isReply = isLeader;
 	}
 	
 	@Override

@@ -133,20 +133,11 @@ public class ReplicaServer {
 		System.out.println("(TCP side) Listening for new connections...");
 		while(true) {
 			try {
-				Message message = null;
 				final Socket socket;
 				socket = m_Ssocket.accept();
 				
-				try {
-					ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
-					message = (Message) inputStream.readObject();
-					
-				} catch (ClassNotFoundException e) {
-					e.printStackTrace();
-				}
-				
-				m_connectedServers.add(new ServerConnection(this, m_ID, message.getAddress(), message.getPort(), socket));
-				System.out.println("(TCP side) received new connection from: " + message.getPort());
+				m_connectedServers.add(new ServerConnection(this, m_ID, socket.getInetAddress(), socket.getPort(), socket));
+				System.out.println("(TCP side) received new connection from: " + socket.getPort());
 				
 				new Thread(new Runnable() {
 					public void run() {
@@ -173,15 +164,15 @@ public class ReplicaServer {
 				
 				if (message instanceof ServerPingMessage) {
 					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ping from server: " + socket.getPort());
-					if (!((ServerPingMessage) message).isLeader())
-						sc.sendMessage(new ServerPingMessage(m_ID, true));
+					if (!((ServerPingMessage) message).isReply())
+						sc.sendMessage(new ServerPingMessage(m_ID, true), true);
 				}
 				else if (message instanceof ElectionMessage) {
 					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionMessage from port: " + socket.getPort() + " with ID: " + ((ElectionMessage)message).getID());
 					
 					//check if message is not a reply and if server ID is smaller than received one - reply with own ID if that is the case
 					if (!((ElectionMessage)message).isReply() && m_ID < ((ElectionMessage)message).getID())
-						sc.sendMessage(new ElectionMessage(m_ID, true));
+						sc.sendMessage(new ElectionMessage(m_ID, true), true);
 					else if (m_receivedElectionID > ((ElectionMessage)message).getID()){
 						m_receivedElectionID = ((ElectionMessage) message).getID();
 					}
@@ -465,7 +456,7 @@ public class ReplicaServer {
 	
 	private void broadcastToServers(Message message) {
 		for (ServerConnection SC : m_connectedServers)
-			SC.sendMessage(message);
+			SC.sendMessage(message, true);
 	}
 	
 	private void broadcastToClients(Message message) {
