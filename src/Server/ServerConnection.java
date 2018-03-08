@@ -37,7 +37,7 @@ public class ServerConnection {
 		sendMessage(message);
 	}
 	
-	public void sendMessage(Message message) {
+	public synchronized void sendMessage(Message message) {
 		try {
 			if (message instanceof ServerPingMessage) {
 				message.setPort(m_socket.getLocalPort());
@@ -83,7 +83,6 @@ public class ServerConnection {
 			}
 			
 			try {
-				
 				Socket socket = new Socket();
 				socket.connect(new InetSocketAddress(m_address, m_port));
 				

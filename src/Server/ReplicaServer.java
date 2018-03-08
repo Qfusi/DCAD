@@ -105,7 +105,6 @@ public class ReplicaServer {
 					((ConnectMessage) message).setList(m_GObjects);
 				
 					m_FEconnection.sendMessage(message);
-					broadcastToServers(message);
 				} else {
 					((ConnectMessage) message).setMayJoin(false);
 					((ConnectMessage) message).setReply(true);
@@ -113,18 +112,11 @@ public class ReplicaServer {
 					m_FEconnection.sendMessage(message);
 				}
 			} else if (message instanceof DrawMessage) {
-				m_GObjects.add((GObject) message.getObj());
-				
 				broadcastToClients(message);
-				broadcastToServers(new UpdateMessage(m_GObjects));
 			} else if (message instanceof RemoveMessage) {
-				m_GObjects.remove(m_GObjects.size() - 1);
-				
 				broadcastToClients(message);
-				broadcastToServers(new UpdateMessage(m_GObjects));
 			} else if (message instanceof DisconnectMessage) {
 				removeClient(message.getPort());
-				broadcastToServers(message);
 			}
 		}
 	}
@@ -155,7 +147,6 @@ public class ReplicaServer {
 		System.out.println("(TCP side) Listening for server messages from socket: " + socket.getPort() + "...");
 		System.out.println("--------------------------------------------------------------");
 		while (true) {
-				Message message = null;
 				ObjectInputStream inputStream = null;
 				
 				try {
@@ -172,14 +163,16 @@ public class ReplicaServer {
 						electionProtocol();
 					}
 					
+					//If the thread is started in ServerConnection we will have to reconnect. If the thread is not from SC we don't reconnect and let it die.
 					if (fromSC)
 						temporary.reconnect();
+					
 					// break in order to terminate this listener thread - disconnected server will be accepted again in listenForServerMessages method
 					// and new listener thread will be started again
 					break;
-				}
+				} //-----------------------------------------------------------------------------------------------------
 				try {
-					message = (Message) inputStream.readObject();
+					Message message = (Message) inputStream.readObject();
 					
 					ServerConnection sc = getServerConnection(message.getPort());
 					
@@ -206,10 +199,6 @@ public class ReplicaServer {
 							m_receivedElectionID = 15;
 						}
 					}
-					else if (message instanceof UpdateMessage) {
-						System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- UpdateMessage");
-						m_GObjects = ((UpdateMessage) message).getList();
-					}
 					else if (message instanceof ConnectMessage) {
 						System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- ConnectMessage");
 						addClient(message.getAddress(), message.getPort());
@@ -221,7 +210,7 @@ public class ReplicaServer {
 				} catch (ClassNotFoundException e) {
 					e.printStackTrace();
 				} catch (IOException e) {
-					e.printStackTrace();
+					System.err.println("Some weird shitty error that is ignored");
 				}
 		}
 	}
