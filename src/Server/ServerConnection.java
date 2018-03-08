@@ -32,20 +32,12 @@ public class ServerConnection {
 	//----------------------------------------------Constantly tries to connect to specified server
 	public void connectToServer() {
 		startListenerThread(m_socket);
-		while (true) {
-			Message message = new ServerPingMessage(m_id, false);
-			
-			sendMessage(message, false);
-			
-			try {
-				Thread.sleep(7500);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
+		
+		Message message = new ServerPingMessage(m_id, false);
+		sendMessage(message);
 	}
 	
-	public void sendMessage(Message message, boolean fromRS) {
+	public void sendMessage(Message message) {
 		try {
 			if (message instanceof ServerPingMessage) {
 				message.setPort(m_socket.getLocalPort());
@@ -69,7 +61,8 @@ public class ServerConnection {
 			outputStream.writeObject(message);
 			
 		} catch (IOException e) {
-			if (!fromRS)
+			e.printStackTrace();
+			/*if (!fromRS)
 			{
 				if (m_disconnectedPort == 0)
 					m_disconnectedPort = m_socket.getPort();
@@ -77,11 +70,11 @@ public class ServerConnection {
 				System.err.println("Server " + m_disconnectedPort + " has disconnected (Exception found in ServerConnection sendMessage method)");
 				
 				reconnect();
-			}
+			}*/
 		}
 	}
 	
-	private void reconnect() {
+	public void reconnect() {
 		while (true) {
 			try {
 				Thread.sleep(5000);
@@ -92,22 +85,21 @@ public class ServerConnection {
 			try {
 				
 				Socket socket = new Socket();
-				InetSocketAddress serveraddress = new InetSocketAddress(m_address, m_port);
-				socket.connect(serveraddress);
+				socket.connect(new InetSocketAddress(m_address, m_port));
 				
-				m_disconnectedPort = 0;
-				
-				m_rs.addServerConnection(new ServerConnection(m_rs, m_id, m_address, m_port, socket));
+				m_rs.addServerConnection(this);
 				
 				startListenerThread(socket);
 				
 				this.m_socket = socket;
 				
+				sendMessage(new ServerPingMessage(m_id, false));
+				
+				m_disconnectedPort = 0;
 				System.out.println("Reconnected to port: " + m_port);
 				break;
 			} catch (IOException e1) {
 				System.err.println("Tried to reconnect to port: " + m_port);
-				e1.printStackTrace();
 			}
 		}
 	}
@@ -115,7 +107,7 @@ public class ServerConnection {
 	private void startListenerThread(final Socket socket) {
 		new Thread(new Runnable() {
 			public void run() {
-				m_rs.listenForServerMessages(socket);
+				m_rs.listenForServerMessages(socket, true);
 			}
 		}).start();
 	}

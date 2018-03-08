@@ -141,7 +141,7 @@ public class ReplicaServer {
 				
 				new Thread(new Runnable() {
 					public void run() {
-						listenForServerMessages(socket);
+						listenForServerMessages(socket, false);
 					}
 				}).start();
 				
@@ -151,75 +151,82 @@ public class ReplicaServer {
 		}
 	}
 	
-	public void listenForServerMessages(Socket socket) {
+	public void listenForServerMessages(Socket socket, boolean fromSC) {
 		System.out.println("(TCP side) Listening for server messages from socket: " + socket.getPort() + "...");
 		System.out.println("--------------------------------------------------------------");
 		while (true) {
-			try {
 				Message message = null;
-				ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
-				message = (Message) inputStream.readObject();
+				ObjectInputStream inputStream = null;
 				
-				ServerConnection sc = getServerConnection(message.getPort());
-				
-				if (message instanceof ServerPingMessage) {
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ping from server: " + socket.getPort());
-					if (!((ServerPingMessage) message).isReply())
-						sc.sendMessage(new ServerPingMessage(m_ID, true), true);
-				}
-				else if (message instanceof ElectionMessage) {
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionMessage from port: " + socket.getPort() + " with ID: " + ((ElectionMessage)message).getID());
+				try {
+					inputStream = new ObjectInputStream(socket.getInputStream());
+				} catch (IOException e) {
+					//------------------------------------------------------------------------------SERVER DISCONNECTS
+					System.err.println("Server " + socket.getPort() + " has disconnected (Exception found in ReplicaServer receive method)");
 					
-					//check if message is not a reply and if server ID is smaller than received one - reply with own ID if that is the case
-					if (!((ElectionMessage)message).isReply() && m_ID < ((ElectionMessage)message).getID())
-						sc.sendMessage(new ElectionMessage(m_ID, true), true);
-					else if (m_receivedElectionID > ((ElectionMessage)message).getID()){
-						m_receivedElectionID = ((ElectionMessage) message).getID();
-					}
-				}
-				else if (message instanceof ElectionWinnerMessage) {
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionWinnerMessage from port: " + socket.getPort());
+					//Remove the disconnected server from the list
+					ServerConnection temporary = getServerConnection(socket.getPort());
+					m_connectedServers.remove(temporary);
 					
-					if (((ElectionWinnerMessage)message).getID() == m_ID) {
-						m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
-						m_receivedElectionID = 15;
+					synchronized(this.getClass()) {
+						electionProtocol();
 					}
+					
+					if (fromSC)
+						temporary.reconnect();
+					// break in order to terminate this listener thread - disconnected server will be accepted again in listenForServerMessages method
+					// and new listener thread will be started again
+					break;
 				}
-				else if (message instanceof UpdateMessage) {
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- UpdateMessage");
-					m_GObjects = ((UpdateMessage) message).getList();
+				try {
+					message = (Message) inputStream.readObject();
+					
+					ServerConnection sc = getServerConnection(message.getPort());
+					
+					if (message instanceof ServerPingMessage) {
+						System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ping from server: " + socket.getPort());
+						if (!((ServerPingMessage) message).isReply())
+							sc.sendMessage(new ServerPingMessage(m_ID, true));
+					}
+					else if (message instanceof ElectionMessage) {
+						System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionMessage from port: " + socket.getPort() + " with ID: " + ((ElectionMessage)message).getID());
+						
+						//check if message is not a reply and if server ID is smaller than received one - reply with own ID if that is the case
+						if (!((ElectionMessage)message).isReply() && m_ID < ((ElectionMessage)message).getID())
+							sc.sendMessage(new ElectionMessage(m_ID, true));
+						else if (m_receivedElectionID > ((ElectionMessage)message).getID()){
+							m_receivedElectionID = ((ElectionMessage) message).getID();
+						}
+					}
+					else if (message instanceof ElectionWinnerMessage) {
+						System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionWinnerMessage from port: " + socket.getPort());
+						
+						if (((ElectionWinnerMessage)message).getID() == m_ID) {
+							m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
+							m_receivedElectionID = 15;
+						}
+					}
+					else if (message instanceof UpdateMessage) {
+						System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- UpdateMessage");
+						m_GObjects = ((UpdateMessage) message).getList();
+					}
+					else if (message instanceof ConnectMessage) {
+						System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- ConnectMessage");
+						addClient(message.getAddress(), message.getPort());
+					}
+					else if (message instanceof DisconnectMessage) {
+						System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- DisconnectMessage");
+						removeClient(message.getPort());
+					}
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
-				else if (message instanceof ConnectMessage) {
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- ConnectMessage");
-					addClient(message.getAddress(), message.getPort());
-				}
-				else if (message instanceof DisconnectMessage) {
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- DisconnectMessage");
-					removeClient(message.getPort());
-				}
-				
-				//------------------------------------------------------------------------------SERVER DISCONNECTS
-			} catch (IOException e) {
-				System.err.println("Server " + socket.getPort() + " has disconnected (Exception found in ReplicaServer receive method)");
-				
-				e.printStackTrace();
-				
-				//Remove the disconnected server from the list
-				ServerConnection connectionToRemove = getServerConnection(socket.getPort());
-				m_connectedServers.remove(connectionToRemove);
-				
-				electionProtocol();
-				
-				// break in order to terminate this listener thread - disconnected server will be accepted again in listenForServerMessages method
-				// and new listener thread will be started again
-				break;
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			}
 		}
 	}
 	
-	private void electionProtocol() {
+	private synchronized void electionProtocol() {		
 		System.out.println("-------------------------------");
 		System.out.println("     Initializing Election");
 		System.out.println("-------------------------------");
@@ -456,7 +463,7 @@ public class ReplicaServer {
 	
 	private void broadcastToServers(Message message) {
 		for (ServerConnection SC : m_connectedServers)
-			SC.sendMessage(message, true);
+			SC.sendMessage(message);
 	}
 	
 	private void broadcastToClients(Message message) {
