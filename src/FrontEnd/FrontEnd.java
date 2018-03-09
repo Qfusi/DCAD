@@ -13,6 +13,7 @@ import java.util.Scanner;
 import Message.MessageConvertion;
 import Message.NewActiveServerMessage;
 import Message.RemoveMessage;
+import Message.fePingMessage;
 import Message.Message;
 import Message.DrawMessage;
 import Message.AckMessage;
@@ -161,6 +162,12 @@ public class FrontEnd {
 				System.out.println("ServerListener received ack message");
 				sendMessage(m_clientSocket, message.getAddress(), message.getPort(), message);
 			} 
+			else if (message instanceof fePingMessage) {
+				System.out.println("ServerListener received fePing message");
+				//Updating the server info so that client messages are sent to the right server
+				clientListener.setServerAddress(message.getAddress());
+				clientListener.setServerPort(message.getPort());
+			}
 		}
 	}
 

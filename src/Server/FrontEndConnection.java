@@ -18,6 +18,7 @@ import Message.Message;
 import Message.MessageConvertion;
 import Message.NewActiveServerMessage;
 import Message.RemoveMessage;
+import Message.fePingMessage;
 
 public class FrontEndConnection {
 	private final InetAddress m_address;
@@ -95,7 +96,7 @@ public class FrontEndConnection {
 	}
 
 	public void sendMessage(Message message) {
-		double TRANSMISSION_FAILURE_RATE = 0.3;
+		double TRANSMISSION_FAILURE_RATE = 0.1;
 		Random generator = new Random();
 		double failure = generator.nextDouble();
 		byte[] b = null;
@@ -131,6 +132,8 @@ public class FrontEndConnection {
 				System.out.println("(UDP side) -=SENT=- New Active Server message");
 			else if (message instanceof AckMessage)
 				System.out.println("(UDP side) -=SENT=- Ack message");
+			else if (message instanceof fePingMessage)
+				System.out.println("(UDP side) -=SENT=- fePing message");
 		} else
 			System.out.println("message was lost");
 	}
@@ -143,6 +146,10 @@ public class FrontEndConnection {
 				return true;
 		}
 		return false;
+	}
+	
+	public void addToALO(Message message) {
+		m_ALO.addMessage(message);
 	}
 
 	public InetAddress getAddress() {

@@ -27,9 +27,8 @@ public class AtLeastOnce implements Runnable {
 	public AtLeastOnce(FrontEndConnection FC) {
 		new Thread(this).start();
 		m_FC = FC;
-		
 	}
-
+	
 	@Override
 	public void run() {
 		while (running) {
@@ -41,11 +40,11 @@ public class AtLeastOnce implements Runnable {
 
 			synchronized (m_messages) {
 				Message s;
-				// Loop that sends out (not yet acced) messages
+				// Loop that sends out (not yet acked) messages
 				for (Iterator<Message> itr = m_messages.iterator(); itr.hasNext();) {
 					s = itr.next();
 					
-					if (m_SC != null)//if it is a Serverconnection
+					if (m_SC != null)//if it is a ServerConnection
 						m_SC.sendMessage(s );
 					else if (m_FC != null)// if it is a FrontEndConnection
 						m_FC.sendMessage(s);

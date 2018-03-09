@@ -18,6 +18,7 @@ import Message.DisconnectMessage;
 import Message.Message;
 import Message.MessageConvertion;
 import Message.RemoveMessage;
+import Message.fePingMessage;
 
 public class ServerConnection {
 	private DatagramSocket m_socket;
@@ -108,7 +109,7 @@ public class ServerConnection {
 	}
 
 	public void sendMessage(Message message) {
-		double TRANSMISSION_FAILURE_RATE = 0.0;
+		double TRANSMISSION_FAILURE_RATE = 0.1;
 		Random generator = new Random();
 		double failure = generator.nextDouble();
 		byte[] b = null;
@@ -141,6 +142,8 @@ public class ServerConnection {
 					System.out.println("sent disconnect message");
 				else if (message instanceof AckMessage)
 					System.out.println("sent ACK message");
+				else if (message instanceof fePingMessage)
+					System.out.println("sent fePing message");
 		}
 		else
 			System.out.println("message was lost");

@@ -7,19 +7,20 @@ import java.io.ObjectInputStream;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.UUID;
 
 import DCAD.GObject;
 import Message.DisconnectMessage;
 import Message.DrawMessage;
 import Message.ElectionMessage;
 import Message.ElectionWinnerMessage;
-import Message.AckMessage;
 import Message.ConnectMessage;
 import Message.Message;
 import Message.NewActiveServerMessage;
 import Message.RemoveMessage;
 import Message.ServerPingMessage;
 import Message.UpdateMessage;
+import Message.fePingMessage;
 
 public class ReplicaServer {
 	//-------------------General
@@ -32,6 +33,7 @@ public class ReplicaServer {
 	private FrontEndConnection m_FEconnection;
 	private InetAddress m_feAddress = null;
 	private int m_fePort;
+	private UUID m_fePingID = UUID.randomUUID();
 	
 	//-------------------UDP
 	private DatagramSocket m_FEsocket;
@@ -225,6 +227,7 @@ public class ReplicaServer {
 						if (((ElectionWinnerMessage)message).getID() == m_ID) {
 							for (int i = 0; i < 5; i++)
 								m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
+							m_FEconnection.addToALO(new fePingMessage(m_address, m_port, m_fePingID));
 							m_receivedElectionID = 15;
 						}
 					}
@@ -268,6 +271,7 @@ public class ReplicaServer {
 				//We won the election -> alert FE
 				for (int i = 0; i < 5; i++)
 					m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
+				m_FEconnection.addToALO(new fePingMessage(m_address, m_port, m_fePingID));
 				m_receivedElectionID = 15;
 			}
 			if (m_ID > m_receivedElectionID) {
@@ -500,10 +504,6 @@ public class ReplicaServer {
 			message.setPort(cc.getPort());
 			m_FEconnection.sendMessage(message);
 		}
-	}
-	
-	private int getID() {
-		return m_ID;
 	}
 	
 	public void addServerConnection(ServerConnection sc) {
