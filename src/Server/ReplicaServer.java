@@ -40,9 +40,11 @@ public class ReplicaServer {
 	//-------------------TCP
 	private ServerSocket m_Ssocket;
 	private Socket m_Csocket;
+	private long m_updateTimestamp = 0;
 	
 	//-------------------Election
 	private int m_receivedElectionID = 15;
+	private boolean m_canParticipate = true;
 	
 	public static void main(String[] args){
 		if(args.length < 1) {
@@ -105,6 +107,7 @@ public class ReplicaServer {
 					((ConnectMessage) message).setList(m_GObjects);
 					
 					m_FEconnection.sendMessage(message);
+					broadcastToServers(message);
 				} else {
 					((ConnectMessage) message).setMayJoin(false);
 					((ConnectMessage) message).setReply(true);
@@ -115,12 +118,19 @@ public class ReplicaServer {
 				m_GObjects.add((GObject) message.getObj());
 				
 				broadcastToClients(message);
+				m_updateTimestamp = System.currentTimeMillis();
+				System.out.println("time: " + m_updateTimestamp);
+				broadcastToServers(new UpdateMessage(m_GObjects, m_updateTimestamp));
 			} else if (message instanceof RemoveMessage) {
 				m_GObjects.remove(m_GObjects.size() - 1);
 				
 				broadcastToClients(message);
+				m_updateTimestamp = System.currentTimeMillis();
+				System.out.println("time: " + m_updateTimestamp);
+				broadcastToServers(new UpdateMessage(m_GObjects, m_updateTimestamp));
 			} else if (message instanceof DisconnectMessage) {
 				removeClient(message.getPort());
+				broadcastToServers(message);
 			}
 		}
 	}
@@ -188,13 +198,33 @@ public class ReplicaServer {
 					else if (message instanceof ElectionMessage) {
 						System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionMessage from port: " + socket.getPort() + " with ID: " + ((ElectionMessage)message).getID());
 						
-						//check if message is not a reply and if server ID is smaller than received one - reply with own ID if that is the case
-						if (!((ElectionMessage)message).isReply() && m_ID < ((ElectionMessage)message).getID())
-							sc.sendMessage(new ElectionMessage(m_ID, true));
-						else if (m_receivedElectionID > ((ElectionMessage)message).getID()){
+						// is message not a reply?
+						if (!((ElectionMessage)message).isReply()) {
 							m_receivedElectionID = ((ElectionMessage) message).getID();
+							
+							// is server out of date? -> may not participate in election -> other server wins
+							if (m_updateTimestamp < ((ElectionMessage)message).getUpdateTimestamp()) {
+								broadcastToServers(new ElectionWinnerMessage(((ElectionMessage) message).getID()));
+								m_canParticipate = false;
+							}
+							// is my ID lower than received ID? -> Let other server know
+							else if (m_ID < m_receivedElectionID) {
+								sc.sendMessage(new ElectionMessage(m_ID, true, m_updateTimestamp));
+							}
+						}
+						// is message reply?
+						else if (((ElectionMessage)message).isReply()){
+							// is server out of date? -> may not participate in election -> other server wins
+							if (m_updateTimestamp < ((ElectionMessage)message).getUpdateTimestamp()) {
+								m_canParticipate = false;
+							}
+							// is save receivedID higher than new received one? -> update to new ID
+							else if (m_receivedElectionID > ((ElectionMessage) message).getID()) {
+								m_receivedElectionID = ((ElectionMessage) message).getID();
+							}
 						}
 					}
+					
 					else if (message instanceof ElectionWinnerMessage) {
 						System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionWinnerMessage from port: " + socket.getPort());
 						
@@ -202,6 +232,12 @@ public class ReplicaServer {
 							m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
 							m_receivedElectionID = 15;
 						}
+					}
+					else if (message instanceof UpdateMessage) {
+						System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- UpdateMessageMessage");
+						m_GObjects = ((UpdateMessage) message).getList();
+						m_updateTimestamp = ((UpdateMessage) message).getTimestamp();
+						System.out.println("time: " + m_updateTimestamp);
 					}
 					else if (message instanceof ConnectMessage) {
 						System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- ConnectMessage");
@@ -224,7 +260,7 @@ public class ReplicaServer {
 		System.out.println("     Initializing Election");
 		System.out.println("-------------------------------");
 		
-		broadcastToServers(new ElectionMessage(m_ID, false));
+		broadcastToServers(new ElectionMessage(m_ID, false, m_updateTimestamp));
 		
 		try {
 			Thread.sleep(500);
@@ -232,15 +268,18 @@ public class ReplicaServer {
 			e.printStackTrace();
 		}
 		
-		if (m_ID < m_receivedElectionID) {
-			//We won the election -> alert FE	
-			m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
-			m_receivedElectionID = 15;
-		}
-		else {
-			//We didn't win the election -> Alert the servers about who won
-			broadcastToServers(new ElectionWinnerMessage(m_receivedElectionID));
-			m_receivedElectionID = 15;
+		if (m_canParticipate) {
+			if (m_ID < m_receivedElectionID) {
+				//We won the election -> alert FE
+				m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
+				m_receivedElectionID = 15;
+			}
+			if (m_ID > m_receivedElectionID) {
+				//We didn't win the election -> Alert the servers about who won
+				broadcastToServers(new ElectionWinnerMessage(m_receivedElectionID));
+				m_receivedElectionID = 15;
+			}
+			m_canParticipate = true;
 		}
 		
 		System.out.println("-------------------------------");
@@ -463,7 +502,6 @@ public class ReplicaServer {
 		for (ClientConnection cc : m_connectedClients) {
 			message.setAddress(cc.getAddress());
 			message.setPort(cc.getPort());
-			System.out.println(cc.getPort());
 			m_FEconnection.sendMessage(message);
 		}
 	}

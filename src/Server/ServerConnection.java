@@ -18,7 +18,6 @@ public class ServerConnection {
 	private  InetAddress m_address;
 	private  int m_port;
 	private Socket m_socket;
-	private int m_disconnectedPort;
 	private ObjectOutputStream outputStream;
 	
 	public ServerConnection(ReplicaServer rs, int id, InetAddress address, int port, Socket socket) {
@@ -62,15 +61,6 @@ public class ServerConnection {
 			
 		} catch (IOException e) {
 			e.printStackTrace();
-			/*if (!fromRS)
-			{
-				if (m_disconnectedPort == 0)
-					m_disconnectedPort = m_socket.getPort();
-				
-				System.err.println("Server " + m_disconnectedPort + " has disconnected (Exception found in ServerConnection sendMessage method)");
-				
-				reconnect();
-			}*/
 		}
 	}
 	
@@ -94,7 +84,6 @@ public class ServerConnection {
 				
 				sendMessage(new ServerPingMessage(m_id, false));
 				
-				m_disconnectedPort = 0;
 				System.out.println("Reconnected to port: " + m_port);
 				break;
 			} catch (IOException e1) {

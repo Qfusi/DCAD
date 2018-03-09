@@ -2,11 +2,13 @@ package Message;
 
 public class ElectionMessage extends Message{
 	private int m_ID;
-	boolean m_isReply;
+	private boolean m_isReply;
+	private long m_updateTimestamp;
 	
-	public ElectionMessage(int id, boolean reply) {
+	public ElectionMessage(int id, boolean reply, long timestamp) {
 		m_ID = id;
 		m_isReply = reply;
+		m_updateTimestamp = timestamp;
 	}
 
 	public int getID() {
@@ -23,6 +25,10 @@ public class ElectionMessage extends Message{
 	
 	public void setIsReply(boolean reply) {
 		m_isReply = reply;
+	}
+	
+	public long getUpdateTimestamp() {
+		return m_updateTimestamp;
 	}
 	
 	@Override
