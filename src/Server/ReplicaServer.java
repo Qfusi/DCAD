@@ -103,7 +103,7 @@ public class ReplicaServer {
 					((ConnectMessage) message).setMayJoin(true);
 					((ConnectMessage) message).setReply(true);
 					((ConnectMessage) message).setList(m_GObjects);
-				
+					
 					m_FEconnection.sendMessage(message);
 				} else {
 					((ConnectMessage) message).setMayJoin(false);
@@ -112,8 +112,12 @@ public class ReplicaServer {
 					m_FEconnection.sendMessage(message);
 				}
 			} else if (message instanceof DrawMessage) {
+				m_GObjects.add((GObject) message.getObj());
+				
 				broadcastToClients(message);
 			} else if (message instanceof RemoveMessage) {
+				m_GObjects.remove(m_GObjects.size() - 1);
+				
 				broadcastToClients(message);
 			} else if (message instanceof DisconnectMessage) {
 				removeClient(message.getPort());
