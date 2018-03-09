@@ -49,6 +49,7 @@ public class ServerConnection {
 		message = receiveMessage();
 		
 		if (message instanceof ConnectMessage) {
+			m_ALO.removeMessage(message.getMessageID());
 			if (((ConnectMessage) message).getMayJoin()) {
 				gui.reDrawEverything(((ConnectMessage) message).getList());
 				return true;
@@ -60,7 +61,7 @@ public class ServerConnection {
 	public Message receiveMessage() {
 		Message message = null;
 		// IF EOFEXCEPTION OCCURS THIS BYTE ARRAY HAS BEEN EXCEEDED!!!!!!!!!!!!!!!!
-		byte[] b = new byte[1024];
+		byte[] b = new byte[2048];
 		DatagramPacket packet = new DatagramPacket(b, b.length);
 
 		try {
@@ -80,7 +81,6 @@ public class ServerConnection {
 		// if message ID is new and it't not an ACK -> add to received messages and return null
 		if (!checkIfAlreadyRecieved(message.getMessageID()) && !(message instanceof AckMessage)) {
 				m_receivedMessages.add(message.getMessageID());
-				sendMessage(new AckMessage(message.getMessageID()));
 				
 				if (message instanceof ConnectMessage)
 					System.out.println("received connect message");
@@ -91,12 +91,14 @@ public class ServerConnection {
 				else if (message instanceof DisconnectMessage)
 					System.out.println("received leave message");
 				
+				sendMessage(new AckMessage(message.getMessageID()));
+				
 		}
 		else if (!(message instanceof AckMessage)) {
 			sendMessage(new AckMessage(message.getMessageID()));
 			return null;
 		}
-		else if (message instanceof AckMessage) {
+		else if (message instanceof AckMessage || message instanceof ConnectMessage) {
 			System.out.println("received ACK message");
 			m_ALO.removeMessage(message.getMessageID());
 			return null;
@@ -106,17 +108,18 @@ public class ServerConnection {
 	}
 
 	public void sendMessage(Message message) {
+		double TRANSMISSION_FAILURE_RATE = 0.0;
+		Random generator = new Random();
+		double failure = generator.nextDouble();
 		byte[] b = null;
+		
 		try {
 			b = MessageConvertion.serialize(message);
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-		DatagramPacket packet = new DatagramPacket(b, b.length, m_serverAddress, m_port);
 		
-		double TRANSMISSION_FAILURE_RATE = 0.0;
-		Random generator = new Random();
-		double failure = generator.nextDouble();
+		DatagramPacket packet = new DatagramPacket(b, b.length, m_serverAddress, m_port);
 		
 		if (!(message instanceof AckMessage) && !(message instanceof DisconnectMessage))
 			m_ALO.addMessage(message);
@@ -141,7 +144,6 @@ public class ServerConnection {
 		}
 		else
 			System.out.println("message was lost");
-
 	}
 	
 	public void requestDisconnect() {

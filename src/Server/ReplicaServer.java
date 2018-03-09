@@ -13,6 +13,7 @@ import Message.DisconnectMessage;
 import Message.DrawMessage;
 import Message.ElectionMessage;
 import Message.ElectionWinnerMessage;
+import Message.AckMessage;
 import Message.ConnectMessage;
 import Message.Message;
 import Message.NewActiveServerMessage;
@@ -96,6 +97,7 @@ public class ReplicaServer {
 						((ConnectMessage) message).setMayJoin(true);
 						((ConnectMessage) message).setReply(true);
 						((ConnectMessage) message).setList(m_GObjects);
+						message.setMessageID(message.getMessageID());
 						
 						m_FEconnection.sendMessage(message);
 						broadcastToServers(message);
@@ -264,7 +266,7 @@ public class ReplicaServer {
 		if (m_canParticipate) {
 			if (m_ID < m_receivedElectionID) {
 				//We won the election -> alert FE
-				//for (int i = 0; i < 5; i++)
+				for (int i = 0; i < 5; i++)
 					m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
 				m_receivedElectionID = 15;
 			}

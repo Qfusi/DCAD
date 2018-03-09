@@ -69,7 +69,6 @@ public class AtLeastOnce implements Runnable {
 
 	public void removeMessage(UUID id) {
 		// Removes the message if the ID matches any of the IDs in the list
-		System.out.println(m_messages.size());
 		Message remove = null;
 		for (Message m : m_messages) {
 			if (id.equals(m.getMessageID())) {

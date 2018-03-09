@@ -31,4 +31,8 @@ public abstract class Message implements Serializable{
 	public UUID getMessageID() {
 		return m_messageID;
 	}
+	
+	public void setMessageID(UUID id) {
+		m_messageID = id;
+	}
 }

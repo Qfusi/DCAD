@@ -44,7 +44,7 @@ public class FrontEndConnection {
 	public Message receiveMessage() {
 		Message message = null;
 		// IF EOFEXCEPTION OCCURS THIS BYTE ARRAY HAS BEEN EXCEEDED!!!!!!!!!!!!!!!!!
-		byte[] b = new byte[1024];
+		byte[] b = new byte[2048];
 		DatagramPacket packet = new DatagramPacket(b, b.length);
 
 		try {
@@ -61,42 +61,52 @@ public class FrontEndConnection {
 			e.printStackTrace();
 		}
 
-		if (!checkIfAlreadyRecieved(message.getMessageID()) && !(message instanceof AckMessage)) {
+		if (!checkIfAlreadyRecieved(message.getMessageID()) && !(message instanceof AckMessage) && !(message instanceof ConnectMessage)) {
 			m_receivedMessages.add(message.getMessageID());
-			sendMessage(new AckMessage(message.getMessageID()));
-
-			if (message instanceof ConnectMessage)
-				System.out.println("(UDP side) -=RECEIVED=- connect message");
-			else if (message instanceof DrawMessage)
+			
+			if (message instanceof DrawMessage)
 				System.out.println("(UDP side) -=RECEIVED=- draw message");
 			else if (message instanceof RemoveMessage)
 				System.out.println("(UDP side) -=RECEIVED=- remove message");
 			else if (message instanceof DisconnectMessage)
 				System.out.println("(UDP side) -=RECEIVED=- disconnect message");
-		} else if (!(message instanceof AckMessage)) {
-			sendMessage(new AckMessage(message.getMessageID()));
+			
+			AckMessage ack = new AckMessage(message.getMessageID());
+			ack.setPort(message.getPort());
+			ack.setAddress(message.getAddress());
+			sendMessage(ack);
+			
+		} else if (!(message instanceof AckMessage) && !(message instanceof ConnectMessage)) {
+			AckMessage ack = new AckMessage(message.getMessageID());
+			ack.setPort(message.getPort());
+			ack.setAddress(message.getAddress());
+			sendMessage(ack);
 			return null;
 		} else if (message instanceof AckMessage) {
-			System.out.println("(UDP side) -=RECEIVED=- remove message");
+			System.out.println("(UDP side) -=RECEIVED=- ack message");
 			m_ALO.removeMessage(message.getMessageID());
 			return null;
+		} else if (message instanceof ConnectMessage) {
+			if (message instanceof ConnectMessage)
+				System.out.println("(UDP side) -=RECEIVED=- connect message");
 		}
 
 		return message;
 	}
 
 	public void sendMessage(Message message) {
+		double TRANSMISSION_FAILURE_RATE = 0.3;
+		Random generator = new Random();
+		double failure = generator.nextDouble();
 		byte[] b = null;
+		
 		try {
 			b = MessageConvertion.serialize(message);
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
+		
 		DatagramPacket packet = new DatagramPacket(b, b.length, m_address, m_port);
-
-		double TRANSMISSION_FAILURE_RATE = 0.0;
-		Random generator = new Random();
-		double failure = generator.nextDouble();
 
 		if (!(message instanceof AckMessage) && !(message instanceof DisconnectMessage)
 				&& !(message instanceof NewActiveServerMessage))

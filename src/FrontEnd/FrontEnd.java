@@ -15,6 +15,7 @@ import Message.NewActiveServerMessage;
 import Message.RemoveMessage;
 import Message.Message;
 import Message.DrawMessage;
+import Message.AckMessage;
 import Message.ConnectMessage;
 import Message.DisconnectMessage;
 
@@ -68,7 +69,7 @@ public class FrontEnd {
 		
 		while (true) {
 			// IF EOFEXCEPTION OCCURS THIS BYTE ARRAY HAS BEEN EXCEEDED!!!!!!!!!!!!!!!!
-			byte[] buf = new byte[1024];
+			byte[] buf = new byte[2048];
 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
 			Message message = null;
 
@@ -86,10 +87,11 @@ public class FrontEnd {
 				e.printStackTrace();
 			}
 			
+			message.setAddress(packet.getAddress());
+			message.setPort(packet.getPort());
+			
 			if (message instanceof ConnectMessage) {
 				System.out.println("ClientListener received connect message of: " + packet.getLength() + " bytes");
-				message.setAddress(packet.getAddress());
-				message.setPort(packet.getPort());
 				sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
 			} else if (message instanceof DrawMessage) {
 				System.out.println("ClientListener received draw message of: " + packet.getLength() + " bytes");	
@@ -100,6 +102,9 @@ public class FrontEnd {
 			} else if (message instanceof DisconnectMessage) {
 				System.out.println("ClientListener received disconnect message of: " + packet.getLength() + " bytes");
 				sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
+			} else if (message instanceof AckMessage) {
+				System.out.println("ClientListener received an Ack message");
+				sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
 			}
 		}
 	}
@@ -108,7 +113,7 @@ public class FrontEnd {
 		System.out.println("Listening for Server messages...");
 		while (true) {
 			// IF EOFEXCEPTION OCCURS THIS BYTE ARRAY HAS BEEN EXCEEDED!!!!!!!!!!!!!!!!
-			byte[] buf = new byte[1024];
+			byte[] buf = new byte[2048];
 			final DatagramPacket packet = new DatagramPacket(buf, buf.length);
 			Message message = null;
 
@@ -131,8 +136,6 @@ public class FrontEnd {
 				System.out.println("-----------------------------------");
 				System.out.println("New active Server with port: " + message.getPort());
 				System.out.println("-----------------------------------");
-				((NewActiveServerMessage) message).setOkay(true);
-				sendMessage(m_serverSocket, packet.getAddress(), packet.getPort(), message);
 				
 				//Updating the server info so that client messages are sent to the right server	
 				clientListener.setServerAddress(message.getAddress());
@@ -145,10 +148,19 @@ public class FrontEnd {
 				} else if (!((ConnectMessage) message).isReply()) {
 
 				}
-			} else {
-				System.out.println("ServerListener received a message of: " + packet.getLength() + " bytes");
+			} 
+			else if (message instanceof DrawMessage) {
+				System.out.println("ServerListener received draw message of: " + packet.getLength() + " bytes");
 				sendMessage(m_clientSocket, message.getAddress(), message.getPort(), message);
 			}
+			else if (message instanceof RemoveMessage) {
+				System.out.println("ServerListener received remove message");
+				sendMessage(m_clientSocket, message.getAddress(), message.getPort(), message);
+			}
+			else if (message instanceof AckMessage) {
+				System.out.println("ServerListener received ack message");
+				sendMessage(m_clientSocket, message.getAddress(), message.getPort(), message);
+			} 
 		}
 	}
 
