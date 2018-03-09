@@ -13,6 +13,7 @@ import Message.DisconnectMessage;
 import Message.DrawMessage;
 import Message.ElectionMessage;
 import Message.ElectionWinnerMessage;
+import Message.AckMessage;
 import Message.ConnectMessage;
 import Message.Message;
 import Message.NewActiveServerMessage;
@@ -78,7 +79,7 @@ public class ReplicaServer {
 			e.printStackTrace();
 		}
 		
-		if (getID() == 2)
+		//if (getID() == 2)
 			electionProtocol();
 		
 		listenForFrontEndMessages();
@@ -122,6 +123,12 @@ public class ReplicaServer {
 				removeClient(message.getPort());
 				broadcastToServers(message);
 			}
+			
+			
+			Message ack = new AckMessage(message.getMessageID());
+			ack.setPort(message.getPort());
+			ack.setAddress(message.getAddress());
+			m_FEconnection.sendMessage(ack);
 		}
 	}
 	

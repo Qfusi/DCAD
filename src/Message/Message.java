@@ -1,10 +1,12 @@
 package Message;
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.util.UUID;
 
 public abstract class Message implements Serializable{
 	protected InetAddress m_address;
 	protected int m_port;
+	protected UUID m_messageID;
 	public Message() {
 	}
 	
@@ -24,5 +26,9 @@ public abstract class Message implements Serializable{
 
 	public void setPort(int port) {
 		this.m_port = port;
+	}
+	
+	public UUID getMessageID() {
+		return m_messageID;
 	}
 }

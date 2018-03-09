@@ -16,9 +16,12 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.rmi.server.UID;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.ListIterator;
+import java.util.UUID;
+
 import javax.swing.JButton;
 import javax.swing.JFrame;
 
@@ -132,7 +135,7 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 		// undo an operation by removing the most recently added object.
 		if (e.getButton() == MouseEvent.BUTTON3 && objectList.size() > 0) {
 			//objectList.removeLast();
-			m_SC.sendMessage(new RemoveMessage());
+			m_SC.sendMessage(new RemoveMessage(UUID.randomUUID()));
 		}
 		repaint();
 	}
@@ -140,7 +143,7 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 	public void mouseReleased(MouseEvent e) {
 		if (current != null) {
 			//objectList.addLast(current);
-			m_SC.sendMessage(new DrawMessage(current));
+			m_SC.sendMessage(new DrawMessage(current, UUID.randomUUID()));
 			current = null;
 		}
 		repaint();

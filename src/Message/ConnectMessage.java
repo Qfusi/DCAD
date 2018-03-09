@@ -1,13 +1,16 @@
 package Message;
 
 import java.util.ArrayList;
+import java.util.UUID;
+
 import DCAD.GObject;
 
 public class ConnectMessage extends Message{
 	private ArrayList<GObject> m_GObjects  = new ArrayList<GObject>();
 	private boolean mayJoin = false;
 	private boolean isReply = false;
-	public ConnectMessage() {
+	public ConnectMessage(UUID messageID) {
+		m_messageID = messageID;
 	}
 
 	public boolean getMayJoin() {

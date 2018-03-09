@@ -44,15 +44,17 @@ public class Cad {
 		while (true) {
 			Message message = m_connection.receiveMessage();
 			
-			if (message instanceof ConnectMessage) {
-				gui.reDrawEverything(((ConnectMessage) message).getList());
-			} else if (message instanceof DrawMessage) {
-				GObject obj = (GObject) message.getObj();
-				drawObject(obj);
-			} else if (message instanceof RemoveMessage) {
-				removeObject();
-			} else if (message instanceof DisconnectMessage) {
-				//TODO Do things
+			if (message != null) {
+				if (message instanceof ConnectMessage) {
+					gui.reDrawEverything(((ConnectMessage) message).getList());
+				} else if (message instanceof DrawMessage) {
+					GObject obj = (GObject) message.getObj();
+					drawObject(obj);
+				} else if (message instanceof RemoveMessage) {
+					removeObject();
+				} else if (message instanceof DisconnectMessage) {
+					//TODO Do things
+				}
 			}
 		}
 	}
