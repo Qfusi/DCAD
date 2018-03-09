@@ -25,7 +25,7 @@ public class ReplicaServer {
 	private ArrayList<ClientConnection> m_connectedClients = new ArrayList<ClientConnection>();
 	private ArrayList<ServerConnection> m_connectedServers = new ArrayList<ServerConnection>();
 	private ArrayList<GObject> m_GObjects  = new ArrayList<GObject>();
-	private static int m_ID;
+	private int m_ID;
 	
 	//-------------------FE
 	private FrontEndConnection m_FEconnection;
@@ -34,8 +34,8 @@ public class ReplicaServer {
 	
 	//-------------------UDP
 	private DatagramSocket m_FEsocket;
-	private static InetAddress m_address = null;
-	private static int m_port;
+	private  InetAddress m_address = null;
+	private  int m_port;
 	
 	//-------------------TCP
 	private ServerSocket m_Ssocket;
@@ -47,28 +47,7 @@ public class ReplicaServer {
 	private boolean m_canParticipate = true;
 	
 	public static void main(String[] args){
-		if(args.length < 1) {
-			System.err.println("Usage: java Server portnumber");
-			System.exit(-1);
-		}
-		try {
-			ReplicaServer instance = new ReplicaServer();
-			
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			
-			if (instance.getID() == 2)
-				instance.electionProtocol();
-			
-			instance.listenForFrontEndMessages();
-			
-		} catch(NumberFormatException e) {
-			System.err.println("Error: port number must be an integer.");
-			System.exit(-1);
-		}
+		new ReplicaServer();
 	}
 
 	private ReplicaServer() {
@@ -92,6 +71,17 @@ public class ReplicaServer {
 				System.err.println("Could not create UDP socket on row: " + i);
 			}
 		}
+		
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		if (getID() == 2)
+			electionProtocol();
+		
+		listenForFrontEndMessages();
 	}
 
 	private void listenForFrontEndMessages() {
