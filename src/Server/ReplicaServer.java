@@ -13,7 +13,6 @@ import Message.DisconnectMessage;
 import Message.DrawMessage;
 import Message.ElectionMessage;
 import Message.ElectionWinnerMessage;
-import Message.AckMessage;
 import Message.ConnectMessage;
 import Message.Message;
 import Message.NewActiveServerMessage;
@@ -91,44 +90,40 @@ public class ReplicaServer {
 		while(true) {
 			Message message = m_FEconnection.receiveMessage();
 			
-			if (message instanceof ConnectMessage) {
-				if (addClient(message.getAddress(), message.getPort())) {
-					((ConnectMessage) message).setMayJoin(true);
-					((ConnectMessage) message).setReply(true);
-					((ConnectMessage) message).setList(m_GObjects);
+			if (message != null) {
+				if (message instanceof ConnectMessage) {
+					if (addClient(message.getAddress(), message.getPort())) {
+						((ConnectMessage) message).setMayJoin(true);
+						((ConnectMessage) message).setReply(true);
+						((ConnectMessage) message).setList(m_GObjects);
+						
+						m_FEconnection.sendMessage(message);
+						broadcastToServers(message);
+					} else {
+						((ConnectMessage) message).setMayJoin(false);
+						((ConnectMessage) message).setReply(true);
+						
+						m_FEconnection.sendMessage(message);
+					}
+				} else if (message instanceof DrawMessage) {
+					m_GObjects.add((GObject) message.getObj());
 					
-					m_FEconnection.sendMessage(message);
+					broadcastToClients(message);
+					m_updateTimestamp = System.currentTimeMillis();
+					System.out.println("time: " + m_updateTimestamp);
+					broadcastToServers(new UpdateMessage(m_GObjects, m_updateTimestamp));
+				} else if (message instanceof RemoveMessage) {
+					m_GObjects.remove(m_GObjects.size() - 1);
+					
+					broadcastToClients(message);
+					m_updateTimestamp = System.currentTimeMillis();
+					System.out.println("time: " + m_updateTimestamp);
+					broadcastToServers(new UpdateMessage(m_GObjects, m_updateTimestamp));
+				} else if (message instanceof DisconnectMessage) {
+					removeClient(message.getPort());
 					broadcastToServers(message);
-				} else {
-					((ConnectMessage) message).setMayJoin(false);
-					((ConnectMessage) message).setReply(true);
-					
-					m_FEconnection.sendMessage(message);
 				}
-			} else if (message instanceof DrawMessage) {
-				m_GObjects.add((GObject) message.getObj());
-				
-				broadcastToClients(message);
-				m_updateTimestamp = System.currentTimeMillis();
-				System.out.println("time: " + m_updateTimestamp);
-				broadcastToServers(new UpdateMessage(m_GObjects, m_updateTimestamp));
-			} else if (message instanceof RemoveMessage) {
-				m_GObjects.remove(m_GObjects.size() - 1);
-				
-				broadcastToClients(message);
-				m_updateTimestamp = System.currentTimeMillis();
-				System.out.println("time: " + m_updateTimestamp);
-				broadcastToServers(new UpdateMessage(m_GObjects, m_updateTimestamp));
-			} else if (message instanceof DisconnectMessage) {
-				removeClient(message.getPort());
-				broadcastToServers(message);
 			}
-			
-			
-			Message ack = new AckMessage(message.getMessageID());
-			ack.setPort(message.getPort());
-			ack.setAddress(message.getAddress());
-			m_FEconnection.sendMessage(ack);
 		}
 	}
 	
@@ -226,7 +221,8 @@ public class ReplicaServer {
 						System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionWinnerMessage from port: " + socket.getPort());
 						
 						if (((ElectionWinnerMessage)message).getID() == m_ID) {
-							m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
+							for (int i = 0; i < 5; i++)
+								m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
 							m_receivedElectionID = 15;
 						}
 					}
@@ -268,7 +264,8 @@ public class ReplicaServer {
 		if (m_canParticipate) {
 			if (m_ID < m_receivedElectionID) {
 				//We won the election -> alert FE
-				m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
+				//for (int i = 0; i < 5; i++)
+					m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
 				m_receivedElectionID = 15;
 			}
 			if (m_ID > m_receivedElectionID) {

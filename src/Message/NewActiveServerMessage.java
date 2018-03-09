@@ -1,6 +1,7 @@
 package Message;
 
 import java.net.InetAddress;
+import java.util.UUID;
 
 public class NewActiveServerMessage extends Message{
 	private boolean m_isOkay = false;

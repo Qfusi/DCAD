@@ -114,7 +114,7 @@ public class ServerConnection {
 		}
 		DatagramPacket packet = new DatagramPacket(b, b.length, m_serverAddress, m_port);
 		
-		double TRANSMISSION_FAILURE_RATE = 0.5;
+		double TRANSMISSION_FAILURE_RATE = 0.0;
 		Random generator = new Random();
 		double failure = generator.nextDouble();
 		
@@ -124,6 +124,9 @@ public class ServerConnection {
 		if (failure > TRANSMISSION_FAILURE_RATE) {
 			try {
 				m_socket.send(packet);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 				
 				if (message instanceof ConnectMessage)
 					System.out.println("sent connect message with ID: " + message.getMessageID());
@@ -135,9 +138,6 @@ public class ServerConnection {
 					System.out.println("sent disconnect message");
 				else if (message instanceof AckMessage)
 					System.out.println("sent ACK message");
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
 		}
 		else
 			System.out.println("message was lost");
