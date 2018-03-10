@@ -13,10 +13,11 @@ import java.util.Scanner;
 import Message.MessageConvertion;
 import Message.NewActiveServerMessage;
 import Message.RemoveMessage;
-import Message.fePingMessage;
+import Message.FEPingMessage;
 import Message.Message;
 import Message.DrawMessage;
 import Message.AckMessage;
+import Message.ClientCheckUpMessage;
 import Message.ConnectMessage;
 import Message.DisconnectMessage;
 
@@ -106,7 +107,10 @@ public class FrontEnd {
 			} else if (message instanceof AckMessage) {
 				System.out.println("ClientListener received an Ack message");
 				sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
-			}
+			} else if (message instanceof ClientCheckUpMessage) {
+                System.out.println("ClientListener received an Checkup message");
+                sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
+            }
 		}
 	}
 	
@@ -162,7 +166,7 @@ public class FrontEnd {
 				System.out.println("ServerListener received ack message");
 				sendMessage(m_clientSocket, message.getAddress(), message.getPort(), message);
 			} 
-			else if (message instanceof fePingMessage) {
+			else if (message instanceof FEPingMessage) {
 				//System.out.println("ServerListener received fePing message");
 				
 				//Updating the server info so that client messages are sent to the right server
@@ -172,6 +176,10 @@ public class FrontEnd {
 					System.out.println("changed primary");
 				}
 			}
+			else if (message instanceof ClientCheckUpMessage) {
+                System.out.println("ServerListener received check up message");
+                sendMessage(m_clientSocket, message.getAddress(), message.getPort(), message);
+            }
 		}
 	}
 

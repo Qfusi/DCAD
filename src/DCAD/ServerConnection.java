@@ -13,12 +13,13 @@ import java.util.UUID;
 import AtLeastOnce.AtLeastOnce;
 import Message.DrawMessage;
 import Message.AckMessage;
+import Message.ClientCheckUpMessage;
 import Message.ConnectMessage;
 import Message.DisconnectMessage;
 import Message.Message;
 import Message.MessageConvertion;
 import Message.RemoveMessage;
-import Message.fePingMessage;
+import Message.FEPingMessage;
 
 public class ServerConnection {
 	private DatagramSocket m_socket;
@@ -91,6 +92,8 @@ public class ServerConnection {
 					System.out.println("received remove message");
 				else if (message instanceof DisconnectMessage)
 					System.out.println("received leave message");
+				else if (message instanceof ClientCheckUpMessage)
+					System.out.println("received clientCheckUp message");
 				
 				sendMessage(new AckMessage(message.getMessageID()));
 				
@@ -104,6 +107,12 @@ public class ServerConnection {
 			m_ALO.removeMessage(message.getMessageID());
 			return null;
 		}
+		
+		//catch all checkup messages, user should not notice them. 
+		if(message instanceof ClientCheckUpMessage) {
+            sendMessage(new ClientCheckUpMessage(UUID.randomUUID(), true));
+            return null;
+        }
 
 		return message;
 	}
@@ -142,7 +151,7 @@ public class ServerConnection {
 					System.out.println("sent disconnect message");
 				else if (message instanceof AckMessage)
 					System.out.println("sent ACK message");
-				else if (message instanceof fePingMessage)
+				else if (message instanceof FEPingMessage)
 					System.out.println("sent fePing message");
 		}
 		else

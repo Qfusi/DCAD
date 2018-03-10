@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -14,13 +15,14 @@ import Message.DisconnectMessage;
 import Message.DrawMessage;
 import Message.ElectionMessage;
 import Message.ElectionWinnerMessage;
+import Message.ClientCheckUpMessage;
 import Message.ConnectMessage;
 import Message.Message;
 import Message.NewActiveServerMessage;
 import Message.RemoveMessage;
 import Message.ServerPingMessage;
 import Message.UpdateMessage;
-import Message.fePingMessage;
+import Message.FEPingMessage;
 
 public class ReplicaServer {
 	//-------------------General
@@ -39,6 +41,7 @@ public class ReplicaServer {
 	private DatagramSocket m_FEsocket;
 	private  InetAddress m_address = null;
 	private  int m_port;
+	private long m_startTime;
 	
 	//-------------------TCP
 	private ServerSocket m_Ssocket;
@@ -127,8 +130,11 @@ public class ReplicaServer {
 				} else if (message instanceof DisconnectMessage) {
 					removeClient(message.getPort());
 					broadcastToServers(message);
+				} else if (message instanceof ClientCheckUpMessage) {
+					setActiveState(message.getPort());
 				}
 			}
+			kickInactiveClients();
 		}
 	}
 	
@@ -228,7 +234,7 @@ public class ReplicaServer {
 						if (((ElectionWinnerMessage)message).getID() == m_ID) {
 							for (int i = 0; i < 5; i++)
 								m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
-							m_FEconnection.addToALO(new fePingMessage(m_address, m_port, m_fePingID));
+							m_FEconnection.addToALO(new FEPingMessage(m_address, m_port, m_fePingID));
 							m_receivedElectionID = 15;
 						}
 						else
@@ -274,7 +280,7 @@ public class ReplicaServer {
 				//We won the election -> alert FE
 				for (int i = 0; i < 5; i++)
 					m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
-				m_FEconnection.addToALO(new fePingMessage(m_address, m_port, m_fePingID));
+				m_FEconnection.addToALO(new FEPingMessage(m_address, m_port, m_fePingID));
 				m_receivedElectionID = 15;
 			}
 			if (m_ID > m_receivedElectionID) {
@@ -513,6 +519,59 @@ public class ReplicaServer {
 	public void addServerConnection(ServerConnection sc) {
 		m_connectedServers.add(sc);
 	}
+	
+	private void kickInactiveClients() {
+        if(m_startTime + 15000 < System.currentTimeMillis()) {//checks every 10 sec
+            System.out.println("Start Kicking check");
+
+            if(m_connectedClients.size()==0) {//check if there is a client on server at all, even if not needed in this version
+                m_startTime = System.currentTimeMillis();//do nothing while no clients registered, reset timer
+            }
+            else{
+
+                while(true) {//until nothing is found
+                    boolean crash = false;
+                    ClientConnection c;
+                    for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
+                        c = itr.next();
+                        if(!c.getActiveStatus()) { //if false, not active, meaning crashed
+                            m_FEconnection.removeCrashedClientsMessagesBridge(c.getPort());// empty AOL list
+                            m_connectedClients.remove(c);
+                            System.out.println("removed someone  :frowning: ");
+                            crash = true;
+                            break;
+                        }
+                        else {
+                            crash = false;
+                        }
+                    }
+                    if (crash == false) {//if nothing found while loop ends
+                        break;
+                    }
+                }
+                System.out.println("broadcasting check up");
+                broadcastToClients(new ClientCheckUpMessage(UUID.randomUUID(), false));//
+                m_startTime = System.currentTimeMillis();
+                //set all current clients to false
+                ClientConnection c2;
+                for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
+                    c2 = itr.next();
+                    c2.setActiveStatus(false);
+                }
+            }
+        }
+    }
+                
+	private void setActiveState(int port) {
+        ClientConnection c;
+        System.out.println("Client is active");
+        for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
+            c = itr.next();
+            if(port== c.getPort()) {
+                c.setActiveStatus(true);
+            }
+        }
+    }
 }
 
 

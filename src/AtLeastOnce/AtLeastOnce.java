@@ -8,7 +8,7 @@ import java.util.UUID;
 
 import DCAD.ServerConnection;
 import Message.Message;
-import Message.fePingMessage;
+import Message.FEPingMessage;
 import Server.FrontEndConnection;
 
 
@@ -60,11 +60,13 @@ public class AtLeastOnce implements Runnable {
 		UUID id = message.getMessageID();
 		boolean add = true;
 		for (Message m : m_messages) {
-			if (id.equals(m.getMessageID()) || m instanceof fePingMessage)
+			if (id.equals(m.getMessageID()))
 				add = false;
 		}
-		if (add)
+		if (add) {
 			m_messages.add(message);
+			System.out.println("ööööööööööööööööööööööööööööööööööööööööööööööööööööööööö");
+		}
 	}
 
 	public void removeMessage(UUID id) {
@@ -82,7 +84,7 @@ public class AtLeastOnce implements Runnable {
 	public void removeFEPing() {
 		Message remove = null;
 		for (Message m : m_messages) {
-			if (m instanceof fePingMessage) {
+			if (m instanceof FEPingMessage) {
 				remove = null;
 			}
 		}
@@ -92,4 +94,26 @@ public class AtLeastOnce implements Runnable {
 	public void stopRunning() {
 		running = false;
 	}
+	
+	public void removeCrashedClientsMessages(int port) {
+        while(true) {
+            Message removeMes = null;
+            for (Message m : m_messages) {
+                if (port == m.getPort()) {
+                    removeMes = m;
+                    break;
+                }
+            }
+            if(removeMes == null) {
+                System.out.println("no more message to remove(AOL)");
+                break; 
+            }
+            else {
+            System.out.println("Removed message with port " + removeMes.getPort() + " and id: "+ removeMes.getMessageID() + " (AOL)");
+                m_messages.remove(removeMes);
+            }
+
+        }
+
+    }
 }

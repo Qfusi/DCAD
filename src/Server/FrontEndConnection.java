@@ -18,7 +18,7 @@ import Message.Message;
 import Message.MessageConvertion;
 import Message.NewActiveServerMessage;
 import Message.RemoveMessage;
-import Message.fePingMessage;
+import Message.FEPingMessage;
 
 public class FrontEndConnection {
 	private final InetAddress m_address;
@@ -110,8 +110,9 @@ public class FrontEndConnection {
 		DatagramPacket packet = new DatagramPacket(b, b.length, m_address, m_port);
 
 		if (!(message instanceof AckMessage) && !(message instanceof DisconnectMessage)
-				&& !(message instanceof NewActiveServerMessage))
+				&& !(message instanceof NewActiveServerMessage) && !(message instanceof FEPingMessage)) {
 			m_ALO.addMessage(message);
+		}
 
 		if (failure > TRANSMISSION_FAILURE_RATE) {
 			try {
@@ -163,4 +164,8 @@ public class FrontEndConnection {
 	public int getPort() {
 		return m_port;
 	}
+	
+	public void removeCrashedClientsMessagesBridge(int port) {
+        m_ALO.removeCrashedClientsMessages(port);
+    }
 }
