@@ -10,15 +10,7 @@ import java.util.Random;
 import java.util.UUID;
 
 import AtLeastOnce.AtLeastOnce;
-import Message.DrawMessage;
-import Message.AckMessage;
-import Message.ConnectMessage;
-import Message.DisconnectMessage;
-import Message.Message;
-import Message.MessageConvertion;
-import Message.NewActiveServerMessage;
-import Message.RemoveMessage;
-import Message.FEPingMessage;
+import Message.*;
 
 public class FrontEndConnection {
 	private final InetAddress m_address;
@@ -121,10 +113,14 @@ public class FrontEndConnection {
 				e.printStackTrace();
 			}
 
+			
+			
 			if (message instanceof ConnectMessage)
 				System.out.println("(UDP side) -=SENT=- connect message");
-			else if (message instanceof DrawMessage)
+			else if (message instanceof DrawMessage) {
 				System.out.println("(UDP side) -=SENT=- draw message");
+				System.out.println("------" + message.getMessageID());
+			}
 			else if (message instanceof RemoveMessage)
 				System.out.println("(UDP side) -=SENT=- remove message");
 			else if (message instanceof DisconnectMessage)

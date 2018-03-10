@@ -11,18 +11,7 @@ import java.util.Scanner;
 import java.util.UUID;
 
 import DCAD.GObject;
-import Message.DisconnectMessage;
-import Message.DrawMessage;
-import Message.ElectionMessage;
-import Message.ElectionWinnerMessage;
-import Message.ClientCheckUpMessage;
-import Message.ConnectMessage;
-import Message.Message;
-import Message.NewActiveServerMessage;
-import Message.RemoveMessage;
-import Message.ServerPingMessage;
-import Message.UpdateMessage;
-import Message.FEPingMessage;
+import Message.*;
 
 public class ReplicaServer {
 	//-------------------General
@@ -117,7 +106,6 @@ public class ReplicaServer {
 					
 					broadcastToClients(message);
 					m_updateTimestamp = System.currentTimeMillis();
-					System.out.println("time: " + m_updateTimestamp);
 					broadcastToServers(new UpdateMessage(m_GObjects, m_updateTimestamp));
 				} else if (message instanceof RemoveMessage) {
 					if (!m_GObjects.isEmpty())
@@ -125,7 +113,6 @@ public class ReplicaServer {
 					
 					broadcastToClients(message);
 					m_updateTimestamp = System.currentTimeMillis();
-					System.out.println("time: " + m_updateTimestamp);
 					broadcastToServers(new UpdateMessage(m_GObjects, m_updateTimestamp));
 				} else if (message instanceof DisconnectMessage) {
 					removeClient(message.getPort());
@@ -510,6 +497,7 @@ public class ReplicaServer {
 	
 	private void broadcastToClients(Message message) {
 		for (ClientConnection cc : m_connectedClients) {
+			message.setMessageID(UUID.randomUUID());
 			message.setAddress(cc.getAddress());
 			message.setPort(cc.getPort());
 			m_FEconnection.sendMessage(message);
@@ -521,11 +509,11 @@ public class ReplicaServer {
 	}
 	
 	private void kickInactiveClients() {
-        if(m_startTime + 15000 < System.currentTimeMillis()) {//checks every 10 sec
+        if(m_startTime + 15000 < System.currentTimeMillis()) {							//checks every 10 sec
             System.out.println("Start Kicking check");
 
-            if(m_connectedClients.size()==0) {//check if there is a client on server at all, even if not needed in this version
-                m_startTime = System.currentTimeMillis();//do nothing while no clients registered, reset timer
+            if(m_connectedClients.size()==0) {											//check if there is a client on server at all, even if not needed in this version
+                m_startTime = System.currentTimeMillis();								//do nothing while no clients registered, reset timer
             }
             else{
 
@@ -534,24 +522,24 @@ public class ReplicaServer {
                     ClientConnection c;
                     for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
                         c = itr.next();
-                        if(!c.getActiveStatus()) { //if false, not active, meaning crashed
-                            m_FEconnection.removeCrashedClientsMessagesBridge(c.getPort());// empty AOL list
+                        if(!c.getActiveStatus()) { 														//if false, not active, meaning crashed
+                            m_FEconnection.removeCrashedClientsMessagesBridge(c.getPort());				// empty AOL list
                             m_connectedClients.remove(c);
                             System.out.println("removed someone  :frowning: ");
                             crash = true;
                             break;
                         }
-                        else {
+                        else
                             crash = false;
-                        }
                     }
-                    if (crash == false) {//if nothing found while loop ends
+                    
+                    if (crash == false)																//if nothing found while loop ends
                         break;
-                    }
                 }
                 System.out.println("broadcasting check up");
                 broadcastToClients(new ClientCheckUpMessage(UUID.randomUUID(), false));//
                 m_startTime = System.currentTimeMillis();
+                
                 //set all current clients to false
                 ClientConnection c2;
                 for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
@@ -567,7 +555,7 @@ public class ReplicaServer {
         System.out.println("Client is active");
         for(Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
             c = itr.next();
-            if(port== c.getPort()) {
+            if(port == c.getPort()) {
                 c.setActiveStatus(true);
             }
         }

@@ -10,16 +10,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-import Message.MessageConvertion;
-import Message.NewActiveServerMessage;
-import Message.RemoveMessage;
-import Message.FEPingMessage;
-import Message.Message;
-import Message.DrawMessage;
-import Message.AckMessage;
-import Message.ClientCheckUpMessage;
-import Message.ConnectMessage;
-import Message.DisconnectMessage;
+import Message.*;
 
 public class FrontEnd {
 	static Thread serverThread;

@@ -52,13 +52,10 @@ public class Cad {
 					drawObject(obj);
 				} else if (message instanceof RemoveMessage) {
 					removeObject();
-				} else if (message instanceof DisconnectMessage) {
-					//TODO Do things
 				}
 			}
 		}
 	}
-
 	private void drawObject(GObject obj) {
 		gui.addObject(obj);
 	}

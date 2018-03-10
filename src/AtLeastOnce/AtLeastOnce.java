@@ -8,6 +8,8 @@ import java.util.UUID;
 
 import DCAD.ServerConnection;
 import Message.Message;
+import Message.NewActiveServerMessage;
+import Message.DrawMessage;
 import Message.FEPingMessage;
 import Server.FrontEndConnection;
 
@@ -57,16 +59,25 @@ public class AtLeastOnce implements Runnable {
 	public void addMessage(Message message) {
 		// checks the ID of the message and every message in the list, adds the
 		// message if no match is found
+		System.out.println("0");
 		UUID id = message.getMessageID();
+		System.out.println("------ xD xD xD  :::: " + id);
 		boolean add = true;
+		System.out.println("size of list: " + m_messages.size());
 		for (Message m : m_messages) {
-			if (id.equals(m.getMessageID()))
+			if (id == m.getMessageID()) {
 				add = false;
+				System.out.println("1");
+				System.out.println(id + " VSVSVSVSVSVSVSVSV " + m.getMessageID());
+			}
 		}
 		if (add) {
 			m_messages.add(message);
-			System.out.println("ööööööööööööööööööööööööööööööööööööööööööööööööööööööööö");
-		}
+			if (message instanceof DrawMessage) {
+				System.out.println("======================ADDED MESSAGE TO ALO - PORT: " + message.getPort());
+				System.out.println("======================ADDED : " + message.getMessageID());
+			}
+		} 
 	}
 
 	public void removeMessage(UUID id) {

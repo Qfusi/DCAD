@@ -11,15 +11,7 @@ import java.util.Random;
 import java.util.UUID;
 
 import AtLeastOnce.AtLeastOnce;
-import Message.DrawMessage;
-import Message.AckMessage;
-import Message.ClientCheckUpMessage;
-import Message.ConnectMessage;
-import Message.DisconnectMessage;
-import Message.Message;
-import Message.MessageConvertion;
-import Message.RemoveMessage;
-import Message.FEPingMessage;
+import Message.*;
 
 public class ServerConnection {
 	private DatagramSocket m_socket;
