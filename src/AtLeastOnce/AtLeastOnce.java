@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import DCAD.ServerConnection;
 import Message.Message;
+import Message.fePingMessage;
 import Server.FrontEndConnection;
 
 
@@ -59,7 +60,7 @@ public class AtLeastOnce implements Runnable {
 		UUID id = message.getMessageID();
 		boolean add = true;
 		for (Message m : m_messages) {
-			if (id.equals(m.getMessageID()))
+			if (id.equals(m.getMessageID()) || m instanceof fePingMessage)
 				add = false;
 		}
 		if (add)
@@ -78,8 +79,15 @@ public class AtLeastOnce implements Runnable {
 		m_messages.remove(remove);
 	}
 	
-	public void removeMessage() {
-		
+	public void removeFEPing() {
+		Message remove = null;
+		System.out.println("0");
+		for (Message m : m_messages) {
+			if (m instanceof fePingMessage) {
+				remove = null;
+			}
+		}
+		m_messages.remove(remove);
 	}
 	
 	public void stopRunning() {

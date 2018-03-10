@@ -81,7 +81,7 @@ public class ReplicaServer {
 			e.printStackTrace();
 		}
 		
-		//if (getID() == 2)
+		//if (m_ID == 2)
 			electionProtocol();
 		
 		listenForFrontEndMessages();
@@ -230,6 +230,8 @@ public class ReplicaServer {
 							m_FEconnection.addToALO(new fePingMessage(m_address, m_port, m_fePingID));
 							m_receivedElectionID = 15;
 						}
+						else
+							m_FEconnection.removeFEPing();
 					}
 					else if (message instanceof UpdateMessage) {
 						System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- UpdateMessageMessage");
@@ -275,7 +277,8 @@ public class ReplicaServer {
 				m_receivedElectionID = 15;
 			}
 			if (m_ID > m_receivedElectionID) {
-				//We didn't win the election -> Alert the servers about who won
+				//We didn't win the election -> Alert the servers about who won and stop pinging FE
+				m_FEconnection.removeFEPing();
 				broadcastToServers(new ElectionWinnerMessage(m_receivedElectionID));
 				m_receivedElectionID = 15;
 			}
@@ -449,34 +452,34 @@ public class ReplicaServer {
 	}
 	
 	private static int readPortFromFile(int row, int collumn, FileReader file) {
-		Scanner m_s = null;
+		Scanner s = null;
 		ArrayList<String> list = new ArrayList<String>();
 		int i;
-		m_s = new Scanner(file);
+		s = new Scanner(file);
 		
-		while (m_s.hasNextLine()) {
-			list.add(m_s.nextLine());
+		while (s.hasNextLine()) {
+			list.add(s.nextLine());
 		}
 		
 		i = Integer.parseInt(list.get(row).split(" ")[collumn]);
 		
-		m_s.close();
+		s.close();
 		return i;
 	}
 	
 	private static InetAddress readAddressFromFile(int row, FileReader file) {
-		Scanner m_s = null;
+		Scanner s = null;
 		ArrayList<String> list = new ArrayList<String>();
 		String address;
-		m_s = new Scanner(file);
+		s = new Scanner(file);
 		
-		while (m_s.hasNextLine()) {
-			list.add(m_s.nextLine());
+		while (s.hasNextLine()) {
+			list.add(s.nextLine());
 		}
 		
 		address = list.get(row).split(" ")[0];
 		
-		m_s.close();
+		s.close();
 		try {
 			return InetAddress.getByName(address);
 		} catch (UnknownHostException e) {

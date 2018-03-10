@@ -152,6 +152,10 @@ public class FrontEndConnection {
 		m_ALO.addMessage(message);
 	}
 
+	public void removeFEPing() {
+		m_ALO.removeFEPing();
+	}
+	
 	public InetAddress getAddress() {
 		return m_address;
 	}

@@ -221,10 +221,35 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 		repaint();
 	}
 	
-	
 	public void reDrawEverything(ArrayList<GObject> list) {
 		for (GObject obj : list)
 			objectList.addLast(obj);
 		repaint();
+	}
+	
+	private void sort(ArrayList<GObject> GObjects) {
+		ArrayList<Long> list = null; 
+		long number;
+		
+		if (GObjects == null || GObjects.size() == 0)
+			return;
+		
+		for (GObject obj : GObjects)
+			list.add(obj.getTimestamp());
+		
+		number = list.size();
+		quickSort(0, number - 1);
+	}
+	
+	private void quickSort(long low, long high) {
+		int i = 0;
+		
+		
+		
+		
+		
+		
+		
+		
 	}
 }

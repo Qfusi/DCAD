@@ -165,8 +165,11 @@ public class FrontEnd {
 			else if (message instanceof fePingMessage) {
 				System.out.println("ServerListener received fePing message");
 				//Updating the server info so that client messages are sent to the right server
-				clientListener.setServerAddress(message.getAddress());
-				clientListener.setServerPort(message.getPort());
+				if ((clientListener.getServerAddress() != message.getAddress()) && (clientListener.getServerPort() != message.getPort())) {
+					clientListener.setServerAddress(message.getAddress());
+					clientListener.setServerPort(message.getPort());
+					System.out.println("changed primary");
+				}
 			}
 		}
 	}
