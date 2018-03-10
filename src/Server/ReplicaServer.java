@@ -497,10 +497,24 @@ public class ReplicaServer {
 	
 	private void broadcastToClients(Message message) {
 		for (ClientConnection cc : m_connectedClients) {
-			message.setMessageID(UUID.randomUUID());
-			message.setAddress(cc.getAddress());
-			message.setPort(cc.getPort());
-			m_FEconnection.sendMessage(message);
+			if (message instanceof DrawMessage) {
+				Message temp = new DrawMessage((GObject) message.getObj(), UUID.randomUUID());
+				temp.setAddress(cc.getAddress());
+				temp.setPort(cc.getPort());
+				m_FEconnection.sendMessage(temp);
+			}
+			else if (message instanceof RemoveMessage) {
+				Message temp = new RemoveMessage(UUID.randomUUID());
+				temp.setAddress(cc.getAddress());
+				temp.setPort(cc.getPort());
+				m_FEconnection.sendMessage(temp);
+			}
+			else if (message instanceof ClientCheckUpMessage){
+				Message temp = new ClientCheckUpMessage(UUID.randomUUID(), false);
+				temp.setAddress(cc.getAddress());
+				temp.setPort(cc.getPort());
+				m_FEconnection.sendMessage(temp);
+			}
 		}
 	}
 	

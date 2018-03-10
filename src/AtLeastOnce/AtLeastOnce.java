@@ -48,7 +48,7 @@ public class AtLeastOnce implements Runnable {
 					s = itr.next();
 					
 					if (m_SC != null)//if it is a ServerConnection
-						m_SC.sendMessage(s );
+						m_SC.sendMessage(s);
 					else if (m_FC != null)// if it is a FrontEndConnection
 						m_FC.sendMessage(s);
 				}
@@ -59,37 +59,47 @@ public class AtLeastOnce implements Runnable {
 	public void addMessage(Message message) {
 		// checks the ID of the message and every message in the list, adds the
 		// message if no match is found
-		System.out.println("0");
-		UUID id = message.getMessageID();
-		System.out.println("------ xD xD xD  :::: " + id);
-		boolean add = true;
-		System.out.println("size of list: " + m_messages.size());
-		for (Message m : m_messages) {
-			if (id == m.getMessageID()) {
-				add = false;
-				System.out.println("1");
-				System.out.println(id + " VSVSVSVSVSVSVSVSV " + m.getMessageID());
+		synchronized (m_messages) {
+		
+			System.out.println("0");
+			
+			if (m_messages.size() >= 2)
+				System.out.println(m_messages.get(1).getMessageID());
+			
+			Message temp = message;
+			System.out.println("------ xD xD xD  :::: " + temp.getMessageID());
+			boolean add = true;
+			System.out.println("size of list: " + m_messages.size());
+			for (Message m : m_messages) {
+				if (temp.getMessageID().equals(m.getMessageID())) {
+					add = false;
+					System.out.println("1");
+					System.out.println(temp.getMessageID() + " VSVSVSVSVSVSVSVSV " + m.getMessageID());
+				}
 			}
+			if (add) {
+				m_messages.add(temp);
+				System.out.println("size of list: " + m_messages.size());
+				System.out.println("======================ADDED MESSAGE TO ALO - PORT: " + temp.getPort());
+				System.out.println("======================ADDED : " + temp.getMessageID());
+				if (m_messages.size() >= 2)
+					System.out.println(m_messages.get(1).getMessageID());
+			} 
 		}
-		if (add) {
-			m_messages.add(message);
-			if (message instanceof DrawMessage) {
-				System.out.println("======================ADDED MESSAGE TO ALO - PORT: " + message.getPort());
-				System.out.println("======================ADDED : " + message.getMessageID());
-			}
-		} 
 	}
 
 	public void removeMessage(UUID id) {
 		// Removes the message if the ID matches any of the IDs in the list
-		Message remove = null;
-		for (Message m : m_messages) {
-			if (id.equals(m.getMessageID())) {
-				remove = m;
-				break;
+		synchronized (m_messages) {
+			Message remove = null;
+			for (Message m : m_messages) {
+				if (id.equals(m.getMessageID())) {
+					remove = m;
+					break;
+				}
 			}
+			m_messages.remove(remove);
 		}
-		m_messages.remove(remove);
 	}
 	
 	public void removeFEPing() {
@@ -123,8 +133,6 @@ public class AtLeastOnce implements Runnable {
             System.out.println("Removed message with port " + removeMes.getPort() + " and id: "+ removeMes.getMessageID() + " (AOL)");
                 m_messages.remove(removeMes);
             }
-
         }
-
     }
 }
