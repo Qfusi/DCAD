@@ -117,7 +117,8 @@ public class ReplicaServer {
 					System.out.println("time: " + m_updateTimestamp);
 					broadcastToServers(new UpdateMessage(m_GObjects, m_updateTimestamp));
 				} else if (message instanceof RemoveMessage) {
-					m_GObjects.remove(m_GObjects.size() - 1);
+					if (!m_GObjects.isEmpty())
+						m_GObjects.remove(m_GObjects.size() - 1);
 					
 					broadcastToClients(message);
 					m_updateTimestamp = System.currentTimeMillis();

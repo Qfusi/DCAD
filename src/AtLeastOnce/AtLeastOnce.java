@@ -81,7 +81,6 @@ public class AtLeastOnce implements Runnable {
 	
 	public void removeFEPing() {
 		Message remove = null;
-		System.out.println("0");
 		for (Message m : m_messages) {
 			if (m instanceof fePingMessage) {
 				remove = null;

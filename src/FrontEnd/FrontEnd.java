@@ -163,7 +163,8 @@ public class FrontEnd {
 				sendMessage(m_clientSocket, message.getAddress(), message.getPort(), message);
 			} 
 			else if (message instanceof fePingMessage) {
-				System.out.println("ServerListener received fePing message");
+				//System.out.println("ServerListener received fePing message");
+				
 				//Updating the server info so that client messages are sent to the right server
 				if ((clientListener.getServerAddress() != message.getAddress()) && (clientListener.getServerPort() != message.getPort())) {
 					clientListener.setServerAddress(message.getAddress());

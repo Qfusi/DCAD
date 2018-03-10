@@ -96,7 +96,7 @@ public class FrontEndConnection {
 	}
 
 	public void sendMessage(Message message) {
-		double TRANSMISSION_FAILURE_RATE = 0.1;
+		double TRANSMISSION_FAILURE_RATE = 0.0;
 		Random generator = new Random();
 		double failure = generator.nextDouble();
 		byte[] b = null;
@@ -132,8 +132,8 @@ public class FrontEndConnection {
 				System.out.println("(UDP side) -=SENT=- New Active Server message");
 			else if (message instanceof AckMessage)
 				System.out.println("(UDP side) -=SENT=- Ack message");
-			else if (message instanceof fePingMessage)
-				System.out.println("(UDP side) -=SENT=- fePing message");
+			//else if (message instanceof fePingMessage)
+				//System.out.println("(UDP side) -=SENT=- fePing message");
 		} else
 			System.out.println("message was lost");
 	}

@@ -109,7 +109,7 @@ public class ServerConnection {
 	}
 
 	public void sendMessage(Message message) {
-		double TRANSMISSION_FAILURE_RATE = 0.1;
+		double TRANSMISSION_FAILURE_RATE = 0.0;
 		Random generator = new Random();
 		double failure = generator.nextDouble();
 		byte[] b = null;

@@ -16,8 +16,8 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.rmi.server.UID;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.UUID;
@@ -27,6 +27,7 @@ import javax.swing.JFrame;
 
 import Message.DrawMessage;
 import Message.RemoveMessage;
+import Misc.GObjectComparator;
 
 public class GUI extends JFrame implements WindowListener, ActionListener, MouseListener, MouseMotionListener {
 
@@ -213,43 +214,26 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 	
 	public void addObject(GObject obj) {
 		objectList.addLast(obj);
+		sort(objectList);
 		repaint();
 	}
 	
 	public void removeObject() {
-		objectList.removeLast();
+		if (!objectList.isEmpty())
+			objectList.removeLast();
+		sort(objectList);
 		repaint();
 	}
 	
 	public void reDrawEverything(ArrayList<GObject> list) {
 		for (GObject obj : list)
 			objectList.addLast(obj);
+		sort(objectList);
 		repaint();
 	}
 	
-	private void sort(ArrayList<GObject> GObjects) {
-		ArrayList<Long> list = null; 
-		long number;
-		
-		if (GObjects == null || GObjects.size() == 0)
-			return;
-		
-		for (GObject obj : GObjects)
-			list.add(obj.getTimestamp());
-		
-		number = list.size();
-		quickSort(0, number - 1);
-	}
-	
-	private void quickSort(long low, long high) {
-		int i = 0;
-		
-		
-		
-		
-		
-		
-		
-		
+	private void sort(LinkedList<GObject> list) {
+		System.out.println("sorting");
+		Collections.sort(list, new GObjectComparator());
 	}
 }
