@@ -17,6 +17,7 @@ public class GObject implements Serializable{
 	private Shape s;
 	private Color c;
 	private int x, y, width, height;
+	private long timestamp;
 	// Note that the x and y coordinates are relative to the top left corner of
 	// the
 	// graphics context in which the object is to be drawn - NOT the top left
@@ -64,6 +65,14 @@ public class GObject implements Serializable{
 
 	public int getY() {
 		return y;
+	}
+	
+	public long getTimestamp() {
+		return timestamp;
+	}
+	
+	public void setTimestamp(long timestamp) {
+		this.timestamp = timestamp;
 	}
 
 	public void draw(Graphics g) {

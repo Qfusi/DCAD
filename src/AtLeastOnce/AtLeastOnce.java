@@ -78,6 +78,10 @@ public class AtLeastOnce implements Runnable {
 		m_messages.remove(remove);
 	}
 	
+	public void removeMessage() {
+		
+	}
+	
 	public void stopRunning() {
 		running = false;
 	}

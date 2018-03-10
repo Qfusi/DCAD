@@ -142,7 +142,7 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 
 	public void mouseReleased(MouseEvent e) {
 		if (current != null) {
-			//objectList.addLast(current);
+			current.setTimestamp(System.currentTimeMillis());
 			m_SC.sendMessage(new DrawMessage(current, UUID.randomUUID()));
 			current = null;
 		}
