@@ -134,11 +134,11 @@ public class ServerConnection {
 			}
 				
 				if (message instanceof ConnectMessage)
-					System.out.println("sent connect message with ID: " + message.getMessageID());
+					System.out.println("sent connect message");
 				else if (message instanceof DrawMessage)
-					System.out.println("sent draw message with ID: " + message.getMessageID());
+					System.out.println("sent draw message");
 				else if (message instanceof RemoveMessage)
-					System.out.println("sent remove message with ID: " + message.getMessageID());
+					System.out.println("sent remove message");
 				else if (message instanceof DisconnectMessage)
 					System.out.println("sent disconnect message");
 				else if (message instanceof AckMessage)

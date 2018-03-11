@@ -117,10 +117,8 @@ public class FrontEndConnection {
 			
 			if (message instanceof ConnectMessage)
 				System.out.println("(UDP side) -=SENT=- connect message");
-			else if (message instanceof DrawMessage) {
+			else if (message instanceof DrawMessage)
 				System.out.println("(UDP side) -=SENT=- draw message");
-				System.out.println("------" + message.getMessageID());
-			}
 			else if (message instanceof RemoveMessage)
 				System.out.println("(UDP side) -=SENT=- remove message");
 			else if (message instanceof DisconnectMessage)
@@ -129,8 +127,6 @@ public class FrontEndConnection {
 				System.out.println("(UDP side) -=SENT=- New Active Server message");
 			else if (message instanceof AckMessage)
 				System.out.println("(UDP side) -=SENT=- Ack message");
-			//else if (message instanceof fePingMessage)
-				//System.out.println("(UDP side) -=SENT=- fePing message");
 		} else
 			System.out.println("message was lost");
 	}

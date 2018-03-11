@@ -8,6 +8,7 @@ package DCAD;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.io.Serializable;
+import java.util.UUID;
 
 /**
  *
@@ -18,6 +19,7 @@ public class GObject implements Serializable{
 	private Color c;
 	private int x, y, width, height;
 	private long timestamp;
+	private UUID id;
 	// Note that the x and y coordinates are relative to the top left corner of
 	// the
 	// graphics context in which the object is to be drawn - NOT the top left
@@ -73,6 +75,14 @@ public class GObject implements Serializable{
 	
 	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
+	}
+	
+	public UUID getID() {
+		return id;
+	}
+	
+	public void setID(UUID id) {
+		this.id = id;
 	}
 
 	public void draw(Graphics g) {

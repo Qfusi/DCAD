@@ -51,7 +51,7 @@ public class Cad {
 					GObject obj = (GObject) message.getObj();
 					drawObject(obj);
 				} else if (message instanceof RemoveMessage) {
-					removeObject();
+					removeObject((GObject) message.getObj());
 				}
 			}
 		}
@@ -60,8 +60,8 @@ public class Cad {
 		gui.addObject(obj);
 	}
 	
-	private void removeObject() {
-		gui.removeObject();
+	private void removeObject(GObject obj) {
+		gui.removeObject(obj);
 	}
 	
 }

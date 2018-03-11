@@ -59,33 +59,17 @@ public class AtLeastOnce implements Runnable {
 	public void addMessage(Message message) {
 		// checks the ID of the message and every message in the list, adds the
 		// message if no match is found
-		synchronized (m_messages) {
+		Message temp = message;
+		boolean add = true;
 		
-			System.out.println("0");
-			
-			if (m_messages.size() >= 2)
-				System.out.println(m_messages.get(1).getMessageID());
-			
-			Message temp = message;
-			System.out.println("------ xD xD xD  :::: " + temp.getMessageID());
-			boolean add = true;
-			System.out.println("size of list: " + m_messages.size());
-			for (Message m : m_messages) {
-				if (temp.getMessageID().equals(m.getMessageID())) {
-					add = false;
-					System.out.println("1");
-					System.out.println(temp.getMessageID() + " VSVSVSVSVSVSVSVSV " + m.getMessageID());
-				}
+		for (Message m : m_messages) {
+			if (temp.getMessageID().equals(m.getMessageID())) {
+				add = false;
 			}
-			if (add) {
-				m_messages.add(temp);
-				System.out.println("size of list: " + m_messages.size());
-				System.out.println("======================ADDED MESSAGE TO ALO - PORT: " + temp.getPort());
-				System.out.println("======================ADDED : " + temp.getMessageID());
-				if (m_messages.size() >= 2)
-					System.out.println(m_messages.get(1).getMessageID());
-			} 
 		}
+		if (add) {
+			m_messages.add(temp);
+		} 
 	}
 
 	public void removeMessage(UUID id) {

@@ -2,13 +2,17 @@ package Message;
 
 import java.util.UUID;
 
+import DCAD.GObject;
+
 public class RemoveMessage extends Message{
-	public RemoveMessage(UUID messageID) {
+	private GObject m_obj;
+	public RemoveMessage(GObject obj, UUID messageID) {
+		m_obj = obj;
 		m_messageID = messageID;
 	}
 
 	@Override
 	public Object getObj() {
-		return null;
+		return m_obj;
 	}
 }

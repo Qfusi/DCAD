@@ -83,25 +83,27 @@ public class FrontEnd {
 			message.setAddress(packet.getAddress());
 			message.setPort(packet.getPort());
 			
-			if (message instanceof ConnectMessage) {
-				System.out.println("ClientListener received connect message of: " + packet.getLength() + " bytes");
-				sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
-			} else if (message instanceof DrawMessage) {
-				System.out.println("ClientListener received draw message of: " + packet.getLength() + " bytes");	
-				sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
-			} else if (message instanceof RemoveMessage) {
-				System.out.println("ClientListener received remove message of: " + packet.getLength() + " bytes");
-				sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
-			} else if (message instanceof DisconnectMessage) {
-				System.out.println("ClientListener received disconnect message of: " + packet.getLength() + " bytes");
-				sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
-			} else if (message instanceof AckMessage) {
-				System.out.println("ClientListener received an Ack message");
-				sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
-			} else if (message instanceof ClientCheckUpMessage) {
-                System.out.println("ClientListener received an Checkup message");
-                sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
-            }
+			if (m_serverSocket != null && m_serverAddress != null && m_serverPort != 0) {
+				if (message instanceof ConnectMessage) {
+					System.out.println("ClientListener received connect message of: " + packet.getLength() + " bytes");
+					sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
+				} else if (message instanceof DrawMessage) {
+					System.out.println("ClientListener received draw message of: " + packet.getLength() + " bytes");	
+					sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
+				} else if (message instanceof RemoveMessage) {
+					System.out.println("ClientListener received remove message of: " + packet.getLength() + " bytes");
+					sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
+				} else if (message instanceof DisconnectMessage) {
+					System.out.println("ClientListener received disconnect message of: " + packet.getLength() + " bytes");
+					sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
+				} else if (message instanceof AckMessage) {
+					System.out.println("ClientListener received an Ack message");
+					sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
+				} else if (message instanceof ClientCheckUpMessage) {
+	                System.out.println("ClientListener received an Checkup message");
+	                sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
+	            }
+			}
 		}
 	}
 	
@@ -183,7 +185,8 @@ public class FrontEnd {
 		}
 		DatagramPacket packet = new DatagramPacket(b, b.length, address, port);
 		try {
-			socket.send(packet);
+			if (socket != null)
+				socket.send(packet);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

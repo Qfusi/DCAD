@@ -17,7 +17,6 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.UUID;
@@ -27,7 +26,6 @@ import javax.swing.JFrame;
 
 import Message.DrawMessage;
 import Message.RemoveMessage;
-import Misc.GObjectComparator;
 
 public class GUI extends JFrame implements WindowListener, ActionListener, MouseListener, MouseMotionListener {
 
@@ -135,8 +133,10 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 		// User clicks the right mouse button:
 		// undo an operation by removing the most recently added object.
 		if (e.getButton() == MouseEvent.BUTTON3 && objectList.size() > 0) {
-			//objectList.removeLast();
-			m_SC.sendMessage(new RemoveMessage(UUID.randomUUID()));
+
+			GObject toRemove = objectList.getLast();
+			removeObject(toRemove);
+			m_SC.sendMessage(new RemoveMessage(toRemove, UUID.randomUUID()));
 		}
 		repaint();
 	}
@@ -144,6 +144,10 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 	public void mouseReleased(MouseEvent e) {
 		if (current != null) {
 			current.setTimestamp(System.currentTimeMillis());
+			current.setID(UUID.randomUUID());
+			
+			addObject(current);
+			
 			m_SC.sendMessage(new DrawMessage(current, UUID.randomUUID()));
 			current = null;
 		}
@@ -213,27 +217,69 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 	}
 	
 	public void addObject(GObject obj) {
-		objectList.addLast(obj);
-		sort(objectList);
-		repaint();
+		System.out.println("tid: " + obj.getTimestamp());
+		for (GObject obj2 : objectList) {
+			System.out.println("tid i lista: " + obj2.getTimestamp());
+		}
+		if (!checkIfAlreadyReceived(obj.getID())) {
+			
+			if(!(objectList.isEmpty())) {//if somethings in list
+
+	            if(obj.getTimestamp() > objectList.get(objectList.size()-1).getTimestamp() + 5){//if last obj stamp is bigger than  new obj with more than 5 milsec -> its younger and should be at the end
+	                objectList.addLast(obj);
+	                repaint();
+	                System.out.println("LIST SORT: was older than any");
+	                return;
+	            }
+	            else if(obj.getTimestamp() < objectList.get(0).getTimestamp()-5) {
+	                objectList.add(0, obj);
+	                repaint();
+	                System.out.println("LIST SORT: was younger than any");
+	                return;
+	            }
+
+	            for(int i = objectList.size() - 1; i > 0; i--) {//iteration from last element to first
+
+	                if((obj.getTimestamp() + 5 <= objectList.get(i).getTimestamp() && obj.getTimestamp() - 5 >= objectList.get(i).getTimestamp())) {
+	                    objectList.add(i, obj);//gets added 
+	                    repaint();
+	                    System.out.println("LIST SORT: was equal to element on index "+ i);
+	                    return;
+	                }
+	            }
+	        }
+	        else {
+	            objectList.addLast(obj);
+	            System.out.println("LIST SORT: empty list first obeject");
+	        }
+	        repaint();
+		}
 	}
 	
-	public void removeObject() {
-		if (!objectList.isEmpty())
-			objectList.removeLast();
-		sort(objectList);
+	public void removeObject(GObject obj) {
+		if (!objectList.isEmpty()) {
+			for (int i = 0; i < objectList.size(); i++) {
+				if (obj.getID().equals(objectList.get(i).getID())) {
+					objectList.remove(i);
+				}
+			}
+		}
 		repaint();
 	}
 	
 	public void reDrawEverything(ArrayList<GObject> list) {
 		for (GObject obj : list)
 			objectList.addLast(obj);
-		sort(objectList);
 		repaint();
 	}
 	
-	private void sort(LinkedList<GObject> list) {
-		System.out.println("sorting");
-		Collections.sort(list, new GObjectComparator());
+	public boolean checkIfAlreadyReceived(UUID id) {
+		// Checks the ID in order to avoid handling the same message (same id)
+		// more than once
+		for (GObject obj : objectList) {
+			if (obj.getID() == id)
+				return true;
+		}
+		return false;
 	}
 }
