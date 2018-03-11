@@ -145,9 +145,9 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 		if (current != null) {
 			current.setTimestamp(System.currentTimeMillis());
 			current.setID(UUID.randomUUID());
-			
+
 			addObject(current);
-			
+
 			m_SC.sendMessage(new DrawMessage(current, UUID.randomUUID()));
 			current = null;
 		}
@@ -208,66 +208,58 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 
 	public void paint(Graphics g) {
 		super.paint(g); // The superclass (JFrame) paint function draws the GUI
-						// components.
+		// components.
 		update(g);
 	}
 
 	public void passSC(ServerConnection connection) {
 		m_SC = connection;
 	}
-	
+
+	//when object is new or recived this method selects the index where the object should be stored in the list. It has a 5 milsec limit or else the objects will be handled as concurrent.
 	public void addObject(GObject obj) {
-		System.out.println("tid: " + obj.getTimestamp() +" and id is : "+ obj.getID());
-		for (GObject obj2 : objectList)
-            System.out.println("tid i lista: " + obj2.getTimestamp() +" and id is : " + obj2.getID());
-            
+
 		if (checkIfAlreadyReceived(obj.getID()) == false) {
-			System.out.println("1");
-			
+
+
 			if(!(objectList.isEmpty())) {//if somethings in list
-				System.out.println("2");
 
-	            if(obj.getTimestamp() > objectList.get(objectList.size()-1).getTimestamp() + 5){//if last obj stamp is bigger than  new obj with more than 5 milsec -> its younger and should be at the end
-	                objectList.addLast(obj);
-	                repaint();
-	                System.out.println("LIST SORT: was older than any");
-	                return;
-	            }
-	            else if(obj.getTimestamp() < objectList.get(0).getTimestamp()-5) {
-	                objectList.add(0, obj);
-	                repaint();
-	                System.out.println("LIST SORT: was younger than any");
-	                return;
-	            }
 
-	            System.out.println("3");
-	            for(int i = objectList.size() - 1; i > 0; i--) {//iteration from last element to first
-	            	System.out.println("start of loop, index="+ i + " and element time is : " + objectList.get(i).getTimestamp());
-	            	
-	                if((obj.getTimestamp() + 5 >= objectList.get(i).getTimestamp() && obj.getTimestamp() - 5 <= objectList.get(i).getTimestamp())) {
-	                    objectList.add(i, obj);//gets added 
-	                    repaint();
-	                    System.out.println("LIST SORT: was equal to element on index "+ i);
-	                    return;
-	                }
-	                else if (obj.getTimestamp() - 5 >= objectList.get(i).getTimestamp() ) {
-                        objectList.add(i+1, obj);
-                        System.out.println("simple added at right position");
-                        repaint();
-                        return;
-                    }
-	            }
-	        }
-	        else {
-	            objectList.addLast(obj);
-	            System.out.println("LIST SORT: empty list first obeject");
-	            return;
-	        }
-	        repaint();
+				if(obj.getTimestamp() > objectList.get(objectList.size()-1).getTimestamp() + 5){//if last obj stamp is bigger than  new obj with more than 5 milsec -> its younger and should be at the end
+					objectList.addLast(obj);
+					repaint();
+					return;
+				}
+				else if(obj.getTimestamp() < objectList.get(0).getTimestamp()-5) {
+					objectList.add(0, obj);
+					repaint();
+
+					return;
+				}
+
+
+				for(int i = objectList.size() - 2; i >= 0; i--) {//iteration from last element to first
+
+					if((obj.getTimestamp() + 5 >= objectList.get(i).getTimestamp() && obj.getTimestamp() - 5 <= objectList.get(i).getTimestamp())) {
+						objectList.add(i, obj);//gets added 
+						repaint();
+						return;
+					}
+					else if (obj.getTimestamp() - 5 >= objectList.get(i).getTimestamp() ) {
+						objectList.add(i+1, obj);
+						repaint();
+						return;
+					}
+				}
+			}
+			else {
+				objectList.addLast(obj);
+				return;
+			}
+			repaint();
 		}
-		System.out.println("end");
 	}
-	
+
 	public void removeObject(GObject obj) {
 		if (!objectList.isEmpty()) {
 			for (int i = 0; i < objectList.size(); i++) {
@@ -278,13 +270,13 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 		}
 		repaint();
 	}
-	
+
 	public void reDrawEverything(ArrayList<GObject> list) {
 		for (GObject obj : list)
 			objectList.addLast(obj);
 		repaint();
 	}
-	
+
 	public boolean checkIfAlreadyReceived(UUID id) {
 		// Checks the ID in order to avoid handling the same message (same id)
 		// more than once

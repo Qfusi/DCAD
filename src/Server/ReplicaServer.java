@@ -74,7 +74,7 @@ public class ReplicaServer {
 		}
 
 		//if (m_ID == 2)
-			electionProtocol();
+		electionProtocol();
 
 		listenForFrontEndMessages();
 	}
@@ -134,7 +134,7 @@ public class ReplicaServer {
 				socket = m_Ssocket.accept();
 
 				m_connectedServers
-						.add(new ServerConnection(this, m_ID, socket.getInetAddress(), socket.getPort(), socket));
+				.add(new ServerConnection(this, m_ID, socket.getInetAddress(), socket.getPort(), socket));
 				System.out.println("(TCP side) received new connection from: " + socket.getPort());
 
 				new Thread(new Runnable() {
@@ -161,7 +161,7 @@ public class ReplicaServer {
 				// ------------------------------------------------------------------------------SERVER
 				// DISCONNECTS
 				System.err.println("Server " + socket.getPort()
-						+ " has disconnected (Exception found in ReplicaServer receive method)");
+				+ " has disconnected (Exception found in ReplicaServer receive method)");
 
 				// Remove the disconnected server from the list
 				ServerConnection temporary = getServerConnection(socket.getPort());
@@ -536,7 +536,7 @@ public class ReplicaServer {
 			System.out.println("-Activity check-");
 
 			if (m_connectedClients.size() == 0) { // check if there is a client on server at all, even if not needed in
-													// this version
+				// this version
 				m_startTime = System.currentTimeMillis(); // do nothing while no clients registered, reset timer
 			} else {
 
@@ -581,33 +581,37 @@ public class ReplicaServer {
 		}
 	}
 
+	//when object is new or recived this method selects the index where the object should be stored in the list. It has a 5 milsec limit or else the objects will be handled as concurrent.
 	public void addObject(GObject obj) {
+
+
+
 		if (!(m_GObjects.isEmpty())) {// if somethings in list
+
 			// if last obj stamp is bigger than new obj with more than 5 milsec -> its younger and should be at the end
 			if (obj.getTimestamp() > m_GObjects.get(m_GObjects.size() - 1).getTimestamp() + 5) {
 				m_GObjects.add(obj);
-				System.out.println("LIST SORT: was older then any");
 				return;
 			}
-
 			else if (obj.getTimestamp() < m_GObjects.get(0).getTimestamp() - 5) {
 				m_GObjects.add(0, obj);
-				System.out.println("LIST SORT: was younger then any");
 				return;
 			}
 
-			for (int i = m_GObjects.size() - 1; i > 0; i--) {// iteration from last element to first
+			for (int i = m_GObjects.size() - 2; i >= 0; i--) {// iteration from last element to first
 
-				if ((obj.getTimestamp() + 5 <= m_GObjects.get(i).getTimestamp()
-						&& obj.getTimestamp() - 5 >= m_GObjects.get(i).getTimestamp())) {// if new obj is
+				if ((obj.getTimestamp() + 5 <= m_GObjects.get(i).getTimestamp() && obj.getTimestamp() - 5 >= m_GObjects.get(i).getTimestamp())) {// if new obj is
 					m_GObjects.add(i, obj);// gets added
-					System.out.println("LIST SORT: was equal to element on index " + i);
+					return;
+				}
+				else if (obj.getTimestamp() - 5 >= m_GObjects.get(i).getTimestamp() ) {
+					m_GObjects.add(i+1, obj);
 					return;
 				}
 			}
-		} else {
+		} 
+		else {
 			m_GObjects.add(obj);
-			System.out.println("LIST SORT: empty list first obeject");
 		}
 	}
 
