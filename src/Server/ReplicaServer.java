@@ -437,7 +437,7 @@ public class ReplicaServer {
 
 	private boolean addClient(InetAddress address, int port) {
 		for (ClientConnection c : m_connectedClients) {
-			if (c.getAddress() == address && c.getPort() == port) {
+			if (c.getAddress().equals(address) && c.getPort() == port) {
 				System.out.println("didn't add client");
 				return false;
 			}
