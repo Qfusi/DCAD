@@ -1,10 +1,8 @@
 package Message;
 
-
 import java.util.UUID;
 
-
-
+//Is send by Replica Server to client to check if client answer and by that definition is actice/not crashed. Client send this messge to answer
 public class ClientCheckUpMessage extends Message{
 
     private boolean m_active;
@@ -23,10 +21,8 @@ public class ClientCheckUpMessage extends Message{
         m_active= active;
     }
 
-
     @Override
     public Object getObj() {
-        // TODO Auto-generated method stub
         return null;
     }
 

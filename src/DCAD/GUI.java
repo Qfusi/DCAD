@@ -225,26 +225,29 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 			if(!(objectList.isEmpty())) {//if somethings in list
 
 
-				if(obj.getTimestamp() > objectList.get(objectList.size()-1).getTimestamp() + 5){//if last obj stamp is bigger than  new obj with more than 5 milsec -> its younger and should be at the end
+				//if last obj in list has a  smaller/younger timestamp than new obj (with more than +/-5 milsec diffrence ) -> new obj is older(bigger timestamp) and should be at the end of list
+				if(obj.getTimestamp() > objectList.get(objectList.size()-1).getTimestamp() + 5){
 					objectList.addLast(obj);
 					repaint();
 					return;
 				}
+				//if first obj in list has a bigger/older timestamp than new obj (with more than +/-5 milsec diffrence )-> new obj is younger(smaller timestamp) and should be at the end of list
 				else if(obj.getTimestamp() < objectList.get(0).getTimestamp()-5) {
 					objectList.add(0, obj);
 					repaint();
-
 					return;
 				}
 
 
 				for(int i = objectList.size() - 2; i >= 0; i--) {//iteration from last element to first
 
+					//checks if element on index is in +/-5 milsec radius of new objects timestamp -> its concurrent and should be placed there at this index 
 					if((obj.getTimestamp() + 5 >= objectList.get(i).getTimestamp() && obj.getTimestamp() - 5 <= objectList.get(i).getTimestamp())) {
 						objectList.add(i, obj);//gets added 
 						repaint();
 						return;
 					}
+					//if not close enough (+/-5 milsec) but the time stamp of element is smaller than the new object it needs to be placed at index +1 to sort. 
 					else if (obj.getTimestamp() - 5 >= objectList.get(i).getTimestamp() ) {
 						objectList.add(i+1, obj);
 						repaint();
@@ -252,6 +255,7 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 					}
 				}
 			}
+			//empty list, add
 			else {
 				objectList.addLast(obj);
 				return;
@@ -280,14 +284,11 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 	public boolean checkIfAlreadyReceived(UUID id) {
 		// Checks the ID in order to avoid handling the same message (same id)
 		// more than once
-		System.out.println("start check");
 		for (GObject obj : objectList) {
 			if (obj.getID().equals(id)) {
-				System.out.println("check true");
 				return true;
 			}
 		}
-		System.out.println("check false");
 		return false;
 	}
 }

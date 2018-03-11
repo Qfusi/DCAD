@@ -2,6 +2,7 @@ package Message;
 
 import java.util.UUID;
 
+//AckMessage - when either a server or client receives a message (other than another ack) they will reply with one of these messages containing the received message ID
 public class AckMessage extends Message{
 	public AckMessage(UUID messageID) {
 		m_messageID = messageID;
@@ -9,7 +10,6 @@ public class AckMessage extends Message{
 	
 	@Override
 	public Object getObj() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 }

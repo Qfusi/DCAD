@@ -13,7 +13,8 @@ import Message.DrawMessage;
 import Message.FEPingMessage;
 import Server.FrontEndConnection;
 
-
+//class controls which message are send or not, is created by each client once and by each server. 
+//Messages will be stored in list and removed if ACKSync is received and handled with same id. 
 
 public class AtLeastOnce implements Runnable {
 
@@ -31,7 +32,7 @@ public class AtLeastOnce implements Runnable {
 		new Thread(this).start();
 		m_FC = FC;
 	}
-	
+
 	@Override
 	public void run() {
 		while (running) {
@@ -46,7 +47,7 @@ public class AtLeastOnce implements Runnable {
 				// Loop that sends out (not yet acked) messages
 				for (Iterator<Message> itr = m_messages.iterator(); itr.hasNext();) {
 					s = itr.next();
-					
+
 					if (m_SC != null)//if it is a ServerConnection
 						m_SC.sendMessage(s);
 					else if (m_FC != null)// if it is a FrontEndConnection
@@ -61,7 +62,7 @@ public class AtLeastOnce implements Runnable {
 		// message if no match is found
 		Message temp = message;
 		boolean add = true;
-		
+
 		for (Message m : m_messages) {
 			if (temp.getMessageID().equals(m.getMessageID())) {
 				add = false;
@@ -85,8 +86,9 @@ public class AtLeastOnce implements Runnable {
 			m_messages.remove(remove);
 		}
 	}
-	
+
 	public void removeFEPing() {
+		//??????????????????????????????????????????????????
 		Message remove = null;
 		for (Message m : m_messages) {
 			if (m instanceof FEPingMessage) {
@@ -95,28 +97,27 @@ public class AtLeastOnce implements Runnable {
 		}
 		m_messages.remove(remove);
 	}
-	
+
 	public void stopRunning() {
 		running = false;
 	}
-	
+
 	public void removeCrashedClientsMessages(int port) {
-        while(true) {
-            Message removeMes = null;
-            for (Message m : m_messages) {
-                if (port == m.getPort()) {
-                    removeMes = m;
-                    break;
-                }
-            }
-            if(removeMes == null) {
-                System.out.println("no more message to remove(AOL)");
-                break; 
-            }
-            else {
-            System.out.println("Removed message with port " + removeMes.getPort() + " and id: "+ removeMes.getMessageID() + " (AOL)");
-                m_messages.remove(removeMes);
-            }
-        }
-    }
+		while(true) {
+			Message removeMes = null;
+			for (Message m : m_messages) {
+				if (port == m.getPort()) {
+					removeMes = m;
+					break;
+				}
+			}
+			if(removeMes == null) {
+
+				break; 
+			}
+			else {
+				m_messages.remove(removeMes);
+			}
+		}
+	}
 }

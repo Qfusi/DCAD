@@ -16,5 +16,5 @@ public class FEPingMessage extends Message{
 	public Object getObj() {
 		return null;
 	}
-	
+
 }

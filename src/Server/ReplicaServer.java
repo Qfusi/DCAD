@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Scanner;
 import java.util.UUID;
-
 import DCAD.GObject;
 import Message.*;
 
@@ -45,6 +44,10 @@ public class ReplicaServer {
 		new ReplicaServer();
 	}
 
+	// This solution is build to support up to 3 servers, who will elect a leader which connects to the Front End. Servers will read from a file to set up Socket.
+	// The UDP connection to the front end is controlled by a listen thread and send thread. The TCP which handles the connection between Replica Servers has a thread for each connection, so 2 for
+	// each server. All connection are handled by list which hold the different connection types. Disconnects on server side are handled by catches which are sync. 
+
 	private ReplicaServer() {
 		for (int i = 0; i < 3; i++) {
 			try {
@@ -53,7 +56,6 @@ public class ReplicaServer {
 					m_address = readAddressFromFile(i, new FileReader("resources/ServerConfig"));
 					m_port = readPortFromFile(i, 1, new FileReader("resources/ServerConfig"));
 					m_FEsocket = new DatagramSocket(m_port);
-					System.out.println("created UDP socket with port: " + m_port);
 				} catch (FileNotFoundException e) {
 					e.printStackTrace();
 				}
@@ -79,9 +81,8 @@ public class ReplicaServer {
 		listenForFrontEndMessages();
 	}
 
+	//UDP, listning to FE connection
 	private void listenForFrontEndMessages() {
-		System.out.println("(UDP side) Listening for front end messages... ");
-		System.out.println("--------------------------------------------------------------");
 
 		while (true) {
 			Message message = m_FEconnection.receiveMessage();
@@ -93,18 +94,15 @@ public class ReplicaServer {
 						((ConnectMessage) message).setReply(true);
 						((ConnectMessage) message).setList(m_GObjects);
 						message.setMessageID(message.getMessageID());
-
 						m_FEconnection.sendMessage(message);
 						broadcastToServers(message);
 					} else {
 						((ConnectMessage) message).setMayJoin(false);
 						((ConnectMessage) message).setReply(true);
-
 						m_FEconnection.sendMessage(message);
 					}
 				} else if (message instanceof DrawMessage) {
 					addObject((GObject) message.getObj());
-
 					broadcastToClients(message);
 					m_updateTimestamp = System.currentTimeMillis();
 					broadcastToServers(new UpdateMessage(m_GObjects, m_updateTimestamp));
@@ -126,32 +124,27 @@ public class ReplicaServer {
 		}
 	}
 
+	//TCP, listens for other Replica servers, this method is designed for server 1 and 2. 
 	private void listenForNewServerConnections() {
-		System.out.println("(TCP side) Listening for new connections...");
 		while (true) {
 			try {
 				final Socket socket;
 				socket = m_Ssocket.accept();
-
 				m_connectedServers
 				.add(new ServerConnection(this, m_ID, socket.getInetAddress(), socket.getPort(), socket));
-				System.out.println("(TCP side) received new connection from: " + socket.getPort());
-
 				new Thread(new Runnable() {
 					public void run() {
 						listenForServerMessages(socket, false);
 					}
 				}).start();
-
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
 	}
-
+	//TCP, listens for message from servers like election or backups from prime
 	public void listenForServerMessages(Socket socket, boolean fromSC) {
-		System.out.println("(TCP side) Listening for server messages from socket: " + socket.getPort() + "...");
-		System.out.println("--------------------------------------------------------------");
+
 		while (true) {
 			ObjectInputStream inputStream = null;
 
@@ -160,9 +153,7 @@ public class ReplicaServer {
 			} catch (IOException e) {
 				// ------------------------------------------------------------------------------SERVER
 				// DISCONNECTS
-				System.err.println("Server " + socket.getPort()
-				+ " has disconnected (Exception found in ReplicaServer receive method)");
-
+				System.err.println("Server " + socket.getPort() + " has disconnected (Exception found in ReplicaServer receive method)");
 				// Remove the disconnected server from the list
 				ServerConnection temporary = getServerConnection(socket.getPort());
 				m_connectedServers.remove(temporary);
@@ -187,13 +178,10 @@ public class ReplicaServer {
 				ServerConnection sc = getServerConnection(message.getPort());
 
 				if (message instanceof ServerPingMessage) {
-					System.out.println(
-							"(TCP side) Server " + m_ID + " -=RECEIVED=- a ping from server: " + socket.getPort());
+
 					if (!((ServerPingMessage) message).isReply())
 						sc.sendMessage(new ServerPingMessage(m_ID, true));
 				} else if (message instanceof ElectionMessage) {
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionMessage from port: "
-							+ socket.getPort() + " with ID: " + ((ElectionMessage) message).getID());
 
 					// is message not a reply?
 					if (!((ElectionMessage) message).isReply()) {
@@ -225,32 +213,28 @@ public class ReplicaServer {
 				}
 
 				else if (message instanceof ElectionWinnerMessage) {
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- a ElectionWinnerMessage from port: "
-							+ socket.getPort());
 
 					if (((ElectionWinnerMessage) message).getID() == m_ID) {
 						for (int i = 0; i < 5; i++)
 							m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
+
 						m_FEconnection.addToALO(new FEPingMessage(m_address, m_port, m_fePingID));
 						m_receivedElectionID = 15;
 					} else
 						m_FEconnection.removeFEPing();
 				} else if (message instanceof UpdateMessage) {
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- UpdateMessageMessage");
 					m_GObjects = ((UpdateMessage) message).getList();
 					m_updateTimestamp = ((UpdateMessage) message).getTimestamp();
-					System.out.println("time: " + m_updateTimestamp);
 				} else if (message instanceof ConnectMessage) {
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- ConnectMessage");
+
 					addClient(message.getAddress(), message.getPort());
 				} else if (message instanceof DisconnectMessage) {
-					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- DisconnectMessage");
 					removeClient(message.getPort());
 				}
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
-				System.err.println("Some weird shitty error that is ignored");
+				System.err.println("This error is expeted, handled by catch");
 			}
 		}
 	}
@@ -292,7 +276,7 @@ public class ReplicaServer {
 	}
 
 	// ---------------------------------------------------------------------------------Sets
-	// up connection with replica servers
+	//  TCP  set-up checks which id the server has and assigns the right socket type(ServerSocket or Socket) in the right order and number, creates 2 threads each to listen . 
 	private void TCPsetup() {
 		SocketAddress serveraddress;
 		InetAddress address = null;
@@ -301,9 +285,8 @@ public class ReplicaServer {
 		int port2 = 0;
 
 		switch (m_ID) {
+		//server 1 has one serversocket to connect, 
 		case 0:
-			// ---------------------------------------------------------------------------------------------------------Server
-			// 1
 			try {
 				port = readPortFromFile(m_ID, 2, new FileReader("resources/ServerConfig"));
 			} catch (FileNotFoundException e) {
@@ -315,16 +298,18 @@ public class ReplicaServer {
 			} catch (IOException e2) {
 				e2.printStackTrace();
 			}
-			System.out.println("created TCP recieve socket with port: " + port);
-			System.out.println("--------------------------------------------------------------");
+
 
 			new Thread(new Runnable() {
 				public void run() {
 					listenForNewServerConnections();
 				}
 			}).start();
+
 			break;
+			//server 2 has a serversocket to connect to server 3 and a Socket to connect to server 1
 		case 1:
+
 			// ---------------------------------------------------------------------------------------------------------Server
 			// 2
 			try {
@@ -343,9 +328,7 @@ public class ReplicaServer {
 				e2.printStackTrace();
 			}
 
-			System.out.println("created TCP receive socket with port: " + port);
-			System.out.println("created TCP send socket with port: " + port2);
-			System.out.println("--------------------------------------------------------------");
+
 			new Thread(new Runnable() {
 				public void run() {
 					listenForNewServerConnections();
@@ -369,6 +352,7 @@ public class ReplicaServer {
 				}
 			}).start();
 			break;
+			//server 3 has 2 socket which connect to server 1 or 2. 
 		case 2:
 			// ---------------------------------------------------------------------------------------------------------Server
 			// 3
@@ -404,9 +388,7 @@ public class ReplicaServer {
 
 			m_connectedServers.add(new ServerConnection(this, m_ID, address2, port2, m_Csocket));
 
-			System.out.println("created TCP send socket with port: " + port);
-			System.out.println("created TCP send socket with port: " + port2);
-			System.out.println("--------------------------------------------------------------");
+
 
 			new Thread(new Runnable() {
 				public void run() {
@@ -423,7 +405,7 @@ public class ReplicaServer {
 	}
 
 	// -------------------------------------------------------------------------------------Sets
-	// up connection with FrontEnd
+	// setup connection with FrontEnd, reads adress and port from file and sends message with information for the Front End where to send message coming from client
 	private void UDPsetup() {
 		try {
 			m_feAddress = readAddressFromFile(1, new FileReader("resources/FrontEndConfig"));
@@ -435,15 +417,14 @@ public class ReplicaServer {
 		m_FEconnection = new FrontEndConnection(m_feAddress, m_fePort, m_FEsocket);
 	}
 
+	//checks if client in list allready or if needed to be added. Checks port number to do this. 
 	private boolean addClient(InetAddress address, int port) {
 		for (ClientConnection c : m_connectedClients) {
 			if (c.getAddress().equals(address) && c.getPort() == port) {
-				System.out.println("didn't add client");
 				return false;
 			}
 		}
 		m_connectedClients.add(new ClientConnection(address, port));
-		System.out.println("added client");
 		return true;
 	}
 
@@ -461,13 +442,10 @@ public class ReplicaServer {
 		ArrayList<String> list = new ArrayList<String>();
 		int i;
 		s = new Scanner(file);
-
 		while (s.hasNextLine()) {
 			list.add(s.nextLine());
 		}
-
 		i = Integer.parseInt(list.get(row).split(" ")[collumn]);
-
 		s.close();
 		return i;
 	}
@@ -506,6 +484,7 @@ public class ReplicaServer {
 			SC.sendMessage(message);
 	}
 
+	//UDP, needs to create a new object of this message to give it a new UUID, checks only which message type and acts on that. 
 	private void broadcastToClients(Message message) {
 		for (ClientConnection cc : m_connectedClients) {
 			if (message instanceof DrawMessage) {
@@ -531,24 +510,23 @@ public class ReplicaServer {
 		m_connectedServers.add(sc);
 	}
 
+	//UDP, checks every 15 seconds if clients answer on special message, if no answer they will be kicked 
 	private void kickInactiveClients() {
-		if (m_startTime + 15000 < System.currentTimeMillis()) { // checks every 10 sec
-			System.out.println("-Activity check-");
+		if (m_startTime + 15000 < System.currentTimeMillis()) { // checks every 15 sec
 
-			if (m_connectedClients.size() == 0) { // check if there is a client on server at all, even if not needed in
-				// this version
-				m_startTime = System.currentTimeMillis(); // do nothing while no clients registered, reset timer
+			if (m_connectedClients.size() == 0) { //is there a client connected?, but this method will not be called if no client send message -> not really needed for this version
+
+				m_startTime = System.currentTimeMillis(); // do nothing while no clients connected, reset timer
 			} else {
 
-				while (true) {// until nothing is found
+				while (true) {// this loop runs untill all list is free of crashed clients
 					boolean crash = false;
 					ClientConnection c;
-					for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
+					for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {//run this loop, if crashed client found kick, then start again until nothing found.
 						c = itr.next();
 						if (!c.getActiveStatus()) { // if false, not active, meaning crashed
 							m_FEconnection.removeCrashedClientsMessagesBridge(c.getPort()); // empty AOL list
 							m_connectedClients.remove(c);
-							System.out.println("removed someone a client :(");
 							crash = true;
 							break;
 						} else
@@ -558,10 +536,11 @@ public class ReplicaServer {
 					if (crash == false) // if nothing found while loop ends
 						break;
 				}
-				broadcastToClients(new ClientCheckUpMessage(UUID.randomUUID(), false));//
+				//send
+				broadcastToClients(new ClientCheckUpMessage(UUID.randomUUID(), false));// send Checkmessage which clients need to answer to, if they dont want to be kicked.
 				m_startTime = System.currentTimeMillis();
 
-				// set all current clients to false
+				// set all current clients crash states to false, untill proven wrong by the client when answering on message
 				ClientConnection c2;
 				for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 					c2 = itr.next();
@@ -588,11 +567,12 @@ public class ReplicaServer {
 
 		if (!(m_GObjects.isEmpty())) {// if somethings in list
 
-			// if last obj stamp is bigger than new obj with more than 5 milsec -> its younger and should be at the end
+			//if last obj in list has a  smaller/younger timestamp than new obj (with more than +/-5 milsec diffrence ) -> new obj is older(bigger timestamp) and should be at the end of list
 			if (obj.getTimestamp() > m_GObjects.get(m_GObjects.size() - 1).getTimestamp() + 5) {
 				m_GObjects.add(obj);
 				return;
 			}
+			//if first obj in list has a bigger/older timestamp than new obj (with more than +/-5 milsec diffrence )-> new obj is younger(smaller timestamp) and should be at the end of list
 			else if (obj.getTimestamp() < m_GObjects.get(0).getTimestamp() - 5) {
 				m_GObjects.add(0, obj);
 				return;
@@ -600,10 +580,12 @@ public class ReplicaServer {
 
 			for (int i = m_GObjects.size() - 2; i >= 0; i--) {// iteration from last element to first
 
+				//checks if element on index is in +/-5 milsec radius of new objects timestamp -> its concurrent and should be placed there at this index 
 				if ((obj.getTimestamp() + 5 <= m_GObjects.get(i).getTimestamp() && obj.getTimestamp() - 5 >= m_GObjects.get(i).getTimestamp())) {// if new obj is
 					m_GObjects.add(i, obj);// gets added
 					return;
 				}
+				//if not close enough (+/-5 milsec) but the time stamp of element is smaller than the new object it needs to be placed at index +1 to sort. 
 				else if (obj.getTimestamp() - 5 >= m_GObjects.get(i).getTimestamp() ) {
 					m_GObjects.add(i+1, obj);
 					return;

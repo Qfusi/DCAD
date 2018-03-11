@@ -68,19 +68,19 @@ public class GObject implements Serializable{
 	public int getY() {
 		return y;
 	}
-	
+
 	public long getTimestamp() {
 		return timestamp;
 	}
-	
+
 	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
 	}
-	
+
 	public UUID getID() {
 		return id;
 	}
-	
+
 	public void setID(UUID id) {
 		this.id = id;
 	}

@@ -12,6 +12,7 @@ import java.util.Scanner;
 
 import Message.*;
 
+// 2 threads, one to handled connection to servers side and one for client/Cad side. Before FE can send messages to servers it needs a message from prime server where to send. Reads from file and sets socket from that information
 public class FrontEnd {
 	static Thread serverThread;
 	static Thread clientThread;
@@ -19,25 +20,24 @@ public class FrontEnd {
 	static FrontEnd clientListener;
 	private DatagramSocket m_clientSocket;
 	private DatagramSocket m_serverSocket;
-	
+
 	//--------Active Server
 	private int m_serverPort;
 	private InetAddress m_serverAddress;
-	
+
 	public static void main(String[] args) {
 		serverListener = new FrontEnd(readFile(1));
 		clientListener = new FrontEnd(readFile(0));
-		
 		serverListener.setClientSocket(clientListener.getClientSocket());
 		clientListener.setServerSocket(serverListener.getServerSocket());
-		
+
 		serverThread = new Thread(new Runnable() {
 			public void run() {
 				serverListener.listenForServerMessages();
 			}
 		});
 		serverThread.start();
-		
+
 		clientThread = new Thread(new Runnable() {
 			public void run() {
 				clientListener.listenForClientMessages();
@@ -58,8 +58,7 @@ public class FrontEnd {
 	}
 
 	private void listenForClientMessages() {
-		System.out.println("Listening for Client messages...");
-		
+
 		while (true) {
 			// IF EOFEXCEPTION OCCURS THIS BYTE ARRAY HAS BEEN EXCEEDED!!!!!!!!!!!!!!!!
 			byte[] buf = new byte[2048];
@@ -79,36 +78,30 @@ public class FrontEnd {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
+
 			message.setAddress(packet.getAddress());
 			message.setPort(packet.getPort());
-			
+
 			if (m_serverSocket != null && m_serverAddress != null && m_serverPort != 0) {
 				if (message instanceof ConnectMessage) {
-					System.out.println("ClientListener received connect message of: " + packet.getLength() + " bytes");
 					sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
 				} else if (message instanceof DrawMessage) {
-					System.out.println("ClientListener received draw message of: " + packet.getLength() + " bytes");	
 					sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
 				} else if (message instanceof RemoveMessage) {
-					System.out.println("ClientListener received remove message of: " + packet.getLength() + " bytes");
 					sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
 				} else if (message instanceof DisconnectMessage) {
-					System.out.println("ClientListener received disconnect message of: " + packet.getLength() + " bytes");
 					sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
 				} else if (message instanceof AckMessage) {
-					System.out.println("ClientListener received an Ack message");
 					sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
 				} else if (message instanceof ClientCheckUpMessage) {
-	                System.out.println("ClientListener received an Checkup message");
-	                sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
-	            }
+					sendMessage(m_serverSocket, getServerAddress(), getServerPort(), message);
+				}
 			}
 		}
 	}
-	
+
 	public void listenForServerMessages() {
-		System.out.println("Listening for Server messages...");
+
 		while (true) {
 			// IF EOFEXCEPTION OCCURS THIS BYTE ARRAY HAS BEEN EXCEEDED!!!!!!!!!!!!!!!!
 			byte[] buf = new byte[2048];
@@ -128,19 +121,19 @@ public class FrontEnd {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
+
 			if (message instanceof NewActiveServerMessage) {
+				//prints new prime server after election
 				System.out.println("ServerListener received NewActiveServer message");
 				System.out.println("-----------------------------------");
 				System.out.println("New active Server with port: " + message.getPort());
 				System.out.println("-----------------------------------");
-				
+
 				//Updating the server info so that client messages are sent to the right server	
 				clientListener.setServerAddress(message.getAddress());
 				clientListener.setServerPort(message.getPort());
 			}
 			else if (message instanceof ConnectMessage) {
-				System.out.println("ServerListener received connect reply message of: " + packet.getLength() + " bytes");
 				if (((ConnectMessage) message).isReply()) {
 					sendMessage(m_clientSocket, message.getAddress(), message.getPort(), message);
 				} else if (!((ConnectMessage) message).isReply()) {
@@ -148,31 +141,26 @@ public class FrontEnd {
 				}
 			} 
 			else if (message instanceof DrawMessage) {
-				System.out.println("ServerListener received draw message of: " + packet.getLength() + " bytes");
 				sendMessage(m_clientSocket, message.getAddress(), message.getPort(), message);
 			}
 			else if (message instanceof RemoveMessage) {
-				System.out.println("ServerListener received remove message");
 				sendMessage(m_clientSocket, message.getAddress(), message.getPort(), message);
 			}
 			else if (message instanceof AckMessage) {
-				System.out.println("ServerListener received ack message");
 				sendMessage(m_clientSocket, message.getAddress(), message.getPort(), message);
 			} 
 			else if (message instanceof FEPingMessage) {
-				//System.out.println("ServerListener received fePing message");
-				
+
+
 				//Updating the server info so that client messages are sent to the right server
 				if ((clientListener.getServerAddress() != message.getAddress()) && (clientListener.getServerPort() != message.getPort())) {
 					clientListener.setServerAddress(message.getAddress());
 					clientListener.setServerPort(message.getPort());
-					System.out.println("changed primary");
 				}
 			}
 			else if (message instanceof ClientCheckUpMessage) {
-                System.out.println("ServerListener received check up message");
-                sendMessage(m_clientSocket, message.getAddress(), message.getPort(), message);
-            }
+				sendMessage(m_clientSocket, message.getAddress(), message.getPort(), message);
+			}
 		}
 	}
 
@@ -190,17 +178,6 @@ public class FrontEnd {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-		//THIS BLOCK IS FOR TESTING. REMOVE FOR LIGHTWEIGHT FE-----------------
-		if (message instanceof ConnectMessage)
-			System.out.println("Sent connect message to: " + port);
-		else if (message instanceof DrawMessage)
-			System.out.println("Sent draw message to: " + port);
-		else if (message instanceof RemoveMessage)
-			System.out.println("Sent remove message to: " + port);
-		else if (message instanceof DisconnectMessage)
-			System.out.println("Sent leave message to: " + port);
-		//---------------------------------------------------------------------
 	}
 
 	private static int readFile(int row) {
@@ -211,44 +188,44 @@ public class FrontEnd {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
-		
+
 		while (m_s.hasNextLine()) {
 			list.add(m_s.nextLine());
 		}
-		
+
 		int i = Integer.parseInt(list.get(row).split(" ")[1]);
-		
+
 		return i;
 	}
-	
+
 	private InetAddress getServerAddress() {
 		return m_serverAddress;
 	}
-	
+
 	private void setServerAddress(InetAddress address) {
 		m_serverAddress = address;
 	}
-	
+
 	private int getServerPort() {
 		return m_serverPort;
 	}
-	
+
 	private void setServerPort(int port) {
 		m_serverPort = port;
 	}
-	
+
 	private DatagramSocket getServerSocket() {
 		return m_serverSocket;
 	}
-	
+
 	private DatagramSocket getClientSocket() {
 		return m_clientSocket;
 	}
-	
+
 	private void setServerSocket(DatagramSocket socket) {
 		m_serverSocket = socket;
 	}
-	
+
 	private void setClientSocket(DatagramSocket socket) {
 		m_clientSocket = socket;
 	}
