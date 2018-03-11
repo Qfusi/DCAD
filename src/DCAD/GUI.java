@@ -217,13 +217,15 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 	}
 	
 	public void addObject(GObject obj) {
-		System.out.println("tid: " + obj.getTimestamp());
-		for (GObject obj2 : objectList) {
-			System.out.println("tid i lista: " + obj2.getTimestamp());
-		}
-		if (!checkIfAlreadyReceived(obj.getID())) {
+		System.out.println("tid: " + obj.getTimestamp() +" and id is : "+ obj.getID());
+		for (GObject obj2 : objectList)
+            System.out.println("tid i lista: " + obj2.getTimestamp() +" and id is : " + obj2.getID());
+            
+		if (checkIfAlreadyReceived(obj.getID()) == false) {
+			System.out.println("1");
 			
 			if(!(objectList.isEmpty())) {//if somethings in list
+				System.out.println("2");
 
 	            if(obj.getTimestamp() > objectList.get(objectList.size()-1).getTimestamp() + 5){//if last obj stamp is bigger than  new obj with more than 5 milsec -> its younger and should be at the end
 	                objectList.addLast(obj);
@@ -238,22 +240,32 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 	                return;
 	            }
 
+	            System.out.println("3");
 	            for(int i = objectList.size() - 1; i > 0; i--) {//iteration from last element to first
-
-	                if((obj.getTimestamp() + 5 <= objectList.get(i).getTimestamp() && obj.getTimestamp() - 5 >= objectList.get(i).getTimestamp())) {
+	            	System.out.println("start of loop, index="+ i + " and element time is : " + objectList.get(i).getTimestamp());
+	            	
+	                if((obj.getTimestamp() + 5 >= objectList.get(i).getTimestamp() && obj.getTimestamp() - 5 <= objectList.get(i).getTimestamp())) {
 	                    objectList.add(i, obj);//gets added 
 	                    repaint();
 	                    System.out.println("LIST SORT: was equal to element on index "+ i);
 	                    return;
 	                }
+	                else if (obj.getTimestamp() - 5 >= objectList.get(i).getTimestamp() ) {
+                        objectList.add(i+1, obj);
+                        System.out.println("simple added at right position");
+                        repaint();
+                        return;
+                    }
 	            }
 	        }
 	        else {
 	            objectList.addLast(obj);
 	            System.out.println("LIST SORT: empty list first obeject");
+	            return;
 	        }
 	        repaint();
 		}
+		System.out.println("end");
 	}
 	
 	public void removeObject(GObject obj) {
@@ -276,10 +288,14 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 	public boolean checkIfAlreadyReceived(UUID id) {
 		// Checks the ID in order to avoid handling the same message (same id)
 		// more than once
+		System.out.println("start check");
 		for (GObject obj : objectList) {
-			if (obj.getID() == id)
+			if (obj.getID().equals(id)) {
+				System.out.println("check true");
 				return true;
+			}
 		}
+		System.out.println("check false");
 		return false;
 	}
 }
