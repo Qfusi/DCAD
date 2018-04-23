@@ -154,7 +154,6 @@ public class ServerConnection {
 		m_ALO.stopRunning();
 		for (int i = 10; i > 0; i--)
 			sendMessage(new DisconnectMessage(m_socket.getLocalPort()));
-		
 	}
 	
 	public boolean checkIfAlreadyRecieved(UUID id) {

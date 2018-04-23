@@ -19,7 +19,6 @@ public class FrontEnd {
 	static FrontEnd clientListener;
 	private DatagramSocket m_clientSocket;
 	private DatagramSocket m_serverSocket;
-	
 	//--------Active Server
 	private int m_serverPort;
 	private InetAddress m_serverAddress;

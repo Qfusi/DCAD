@@ -152,6 +152,8 @@ public class ReplicaServer {
 	public void listenForServerMessages(Socket socket, boolean fromSC) {
 		System.out.println("(TCP side) Listening for server messages from socket: " + socket.getPort() + "...");
 		System.out.println("--------------------------------------------------------------");
+		boolean primaryListener = false;
+		
 		while (true) {
 			ObjectInputStream inputStream = null;
 
@@ -168,7 +170,8 @@ public class ReplicaServer {
 				m_connectedServers.remove(temporary);
 
 				synchronized (this.getClass()) {
-					electionProtocol();
+					if (primaryListener)
+						electionProtocol();
 				}
 
 				// If the thread is started in ServerConnection we will have to reconnect. If
@@ -231,10 +234,16 @@ public class ReplicaServer {
 					if (((ElectionWinnerMessage) message).getID() == m_ID) {
 						for (int i = 0; i < 5; i++)
 							m_FEconnection.sendMessage(new NewActiveServerMessage(m_address, m_port));
+						//TODO broadcast to other replicas "I'm the primary"
+						//replicas who receive this message will set a local boolean in this method (this method will listen to the correct replica) to true.
+						//Check with if statement so election is only initialized if it is a the primary replica that crashes.
+						broadcastToServers(new PrimaryServerMessage(true));
 						m_FEconnection.addToALO(new FEPingMessage(m_address, m_port, m_fePingID));
 						m_receivedElectionID = 15;
 					} else
 						m_FEconnection.removeFEPing();
+				} else if (message instanceof PrimaryServerMessage) {
+					primaryListener = true;
 				} else if (message instanceof UpdateMessage) {
 					System.out.println("(TCP side) Server " + m_ID + " -=RECEIVED=- UpdateMessageMessage");
 					m_GObjects = ((UpdateMessage) message).getList();
